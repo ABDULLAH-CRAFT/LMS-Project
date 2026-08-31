@@ -1,0 +1,1 @@
+@import "tailwindcss"; /* pulls in ALL of Tailwind's utility classes (rounded-full, bg-gray-100, flex, etc.) — this one line replaces what used to be a big Tailwind config/directive setup in older versions */
