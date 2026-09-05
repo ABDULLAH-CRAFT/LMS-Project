@@ -7,8 +7,11 @@ import CourseCard from '../components/CourseCard';
 import CourseGridSkeleton from '../components/CourseGridSkeleton';
 import { studentSidebarSections } from '../config/studentSidebar';
 import { useCurrentUser } from '../hooks/useCurrentUser';
+import { useCart } from '../context/CartComtext';
+
 
 export default function StudentDashboard() {
+  const {addToCart,isInCart}=useCart()
   const [search, setSearch] = useState('');
   const { data: user } = useCurrentUser(); // real logged-in student's data, for the greeting
 
@@ -61,17 +64,27 @@ export default function StudentDashboard() {
       {!coursesQuery.isLoading && filteredCourses && filteredCourses.length > 0 && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredCourses.map((course, index) => (
-            <CourseCard
-              key={course.id}
-              course={course}
-              index={index}
-              footer={
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-semibold text-white">${course.price}</span> {/* CHANGED — white price */}
-                  <span className="text-xs font-medium text-gray-500 group-hover:text-purple-300 transition">View course →</span> {/* CHANGED — purple on hover */}
-                </div>
-              }
-            />
+<CourseCard
+  key={course.id}
+  course={course}
+  index={index}
+  footer={
+    <div className="flex items-center justify-between">
+      <span className="text-sm font-semibold text-white">${course.price}</span>
+      <button
+        onClick={(e) => {
+          e.preventDefault(); // stop the card's own Link from navigating
+          e.stopPropagation();
+          addToCart(course);
+        }}
+        disabled={isInCart(course.id)}
+        className="text-xs font-medium px-3 py-1.5 rounded-full bg-white/5 border border-white/10 text-gray-300 hover:border-purple-500/40 hover:text-purple-300 transition disabled:opacity-50 disabled:cursor-not-allowed"
+      >
+        {isInCart(course.id) ? 'In cart ✓' : 'Add to cart'}
+      </button>
+    </div>
+  }
+/>
           ))}
         </div>
       )}

@@ -4,8 +4,10 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '../lib/axios';
 import type { Course } from '../types/course';
 import type { CourseModuleWithLessons } from '../types/courseContent';
+import { usePayCart } from '../hooks/usePayCard';
 
 export default function CourseDetail() {
+  const payMutation=usePayCart()
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -118,14 +120,21 @@ export default function CourseDetail() {
               ) : (
                 <button
                   onClick={() => {
-                    const token = localStorage.getItem('accessToken'); // check login status before attempting enroll
+                    const token = localStorage.getItem('accessToken');
                     if (!token) {
-                      navigate('/login', { state: { redirectTo: `/courses/${id}` } }); // redirect logged-out users to login, remembering this page
+                      navigate('/login', { state: { redirectTo: `/courses/${id}` } });
                       return;
                     }
-                    enrollMutation.mutate();
+                    payMutation.mutate(
+                      { courses: [course] },
+                      {
+                        onSuccess: () => {
+                          queryClient.invalidateQueries({ queryKey: ['enrollment-check', id] });
+                        },
+                      },
+                    );
                   }}
-                  disabled={enrollMutation.isPending}
+                  disabled={payMutation.isPending}
                   className="bg-gradient-to-r from-purple-600 to-cyan-400 text-white px-6 py-3 rounded-full text-sm font-semibold hover:scale-[1.02] transition disabled:opacity-50" // CHANGED — theme gradient button
                 >
                   {enrollMutation.isPending ? 'Enrolling...' : 'Enroll now'}

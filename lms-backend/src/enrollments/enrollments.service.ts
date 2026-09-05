@@ -1,41 +1,188 @@
-import { Injectable, ConflictException } from '@nestjs/common'; // Nest decorator + built-in exception
-import { InjectRepository } from '@nestjs/typeorm'; // repository injection
-import { Repository } from 'typeorm'; // repository type
-import { Enrollment } from './entities/enrollment.entity'; // the entity
-import { CoursesService } from '../courses/courses.service'; // to verify the course exists (throws 404 automatically if not)
-import { CreateEnrollmentDto } from './dto/create-enrollment.dto'; // DTO
+import {
+  Injectable,
+  ConflictException,
+  NotFoundException,
+} from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { Enrollment } from './entities/enrollment.entity';
+import { CoursesService } from '../courses/courses.service';
+import { PaymentsService } from 'src/payment/payments.service';
+import { PaymentStatus } from 'src/payment/entities/payment.entity';
+import { CheckoutCartDto } from './dto/checkout-cart.dto';
+import { VerifyPaymentDto } from 'src/payment/dto/verify-payment.dto';
 
 @Injectable()
 export class EnrollmentsService {
   constructor(
-    @InjectRepository(Enrollment) private enrollmentRepo: Repository<Enrollment>, // gives us .find(), .save(), etc.
-    private coursesService: CoursesService, // injected from CoursesModule, now that it's exported
+    @InjectRepository(Enrollment)
+    private enrollmentRepo: Repository<Enrollment>,
+    private coursesService: CoursesService,
+    private paymentsService: PaymentsService,
   ) {}
 
-  async enroll(studentId: string, dto: CreateEnrollmentDto) {
-    await this.coursesService.findOne(dto.courseId); // confirms the course exists — throws NotFoundException automatically if not, so we don't duplicate that check here
+  /**
+   * Starts checkout for one or more courses at once.
+   *
+   * Free courses are enrolled immediately.
+   * Paid courses are sent to Razorpay as one payment order.
+   */
+  async checkoutCart(studentId: string, dto: CheckoutCartDto) {
+    const uniqueCourseIds = [...new Set(dto.courseIds)];
 
-    const existing = await this.enrollmentRepo.findOne({ // check if this student is already enrolled in this course
-      where: { studentId, courseId: dto.courseId },
+    const alreadyEnrolled = await this.enrollmentRepo.find({
+      where: uniqueCourseIds.map((courseId) => ({
+        studentId,
+        courseId,
+      })),
     });
-    if (existing) throw new ConflictException('Already enrolled in this course'); // prevents duplicate enrollments
 
-    const enrollment = this.enrollmentRepo.create({ studentId, courseId: dto.courseId }); // build in memory — status defaults to ACTIVE automatically
-    return this.enrollmentRepo.save(enrollment); // persist to DB
+    const alreadyEnrolledIds = new Set(
+      alreadyEnrolled.map((e) => e.courseId),
+    );
+
+    const toProcess = uniqueCourseIds.filter(
+      (id) => !alreadyEnrolledIds.has(id),
+    );
+
+    if (toProcess.length === 0) {
+      throw new ConflictException(
+        'Already enrolled in all selected courses',
+      );
+    }
+
+    const courses = await Promise.all(
+      toProcess.map((id) => this.coursesService.findOne(id)),
+    );
+
+    const freeCourses = courses.filter(
+      (course) => Number(course.price) <= 0,
+    );
+
+    const paidCourses = courses.filter(
+      (course) => Number(course.price) > 0,
+    );
+
+    // Enroll in free courses immediately
+    for (const course of freeCourses) {
+      const enrollment = this.enrollmentRepo.create({
+        studentId,
+        courseId: course.id,
+      });
+
+      await this.enrollmentRepo.save(enrollment);
+    }
+
+    // If there are no paid courses, we're done
+    if (paidCourses.length === 0) {
+      return {
+        free: true,
+        enrolledCourseIds: freeCourses.map((course) => course.id),
+      };
+    }
+
+    // Payment items sent to the payment service
+    const lineItems = paidCourses.map((course) => ({
+      referenceType: 'course_enrollment',
+      referenceId: course.id,
+      amount: Number(course.price),
+      quantity: 1,
+    }));
+
+    // Create one payment order for all paid courses
+    const order = await this.paymentsService.createOrderForItems(
+      studentId,
+      lineItems,
+      'INR',
+    );
+
+    return {
+      free: false,
+      freeCoursesEnrolled: freeCourses.map((course) => course.id),
+      ...order,
+    };
   }
 
-  findMyEnrollments(studentId: string) { // used by the "My Courses" page
+  /**
+   * Called after the frontend's Razorpay payment succeeds.
+   *
+   * Verifies the payment and creates one Enrollment
+   * for every course_enrollment item in the payment.
+   */
+  async confirmCart(
+    studentId: string,
+    dto: VerifyPaymentDto,
+  ) {
+    const payment = await this.paymentsService.verifyAndConfirm(
+      studentId,
+      dto,
+    );
+
+    if (payment.status !== PaymentStatus.PAID) {
+      throw new NotFoundException('Payment was not completed');
+    }
+
+    // Explicitly type this as Enrollment[]
+    const enrollments: Enrollment[] = [];
+
+    for (const item of payment.items) {
+      if (item.referenceType !== 'course_enrollment') {
+        continue;
+      }
+
+      const existing = await this.enrollmentRepo.findOne({
+        where: {
+          studentId,
+          courseId: item.referenceId,
+        },
+      });
+
+      if (existing) {
+        enrollments.push(existing);
+        continue;
+      }
+
+      const enrollment = this.enrollmentRepo.create({
+        studentId,
+        courseId: item.referenceId,
+      });
+
+      const savedEnrollment =
+        await this.enrollmentRepo.save(enrollment);
+
+      enrollments.push(savedEnrollment);
+    }
+
+    return {
+      enrollments,
+    };
+  }
+
+  /**
+   * Returns all enrollments for the logged-in student.
+   */
+  findMyEnrollments(studentId: string) {
     return this.enrollmentRepo.find({
-      where: { studentId }, // only this student's enrollments
-      order: { enrolledAt: 'DESC' }, // most recently enrolled first
-      relations: {
-        course: true,
-      },// explicitly loads the related course (eager: true on the entity already does this, but being explicit here is clearer)
+      where: { studentId },
+      order: { enrolledAt: 'DESC' },
+      relations: { course: true },
     });
   }
 
-  async isEnrolled(studentId: string, courseId: string): Promise<boolean> { // used by the course detail page to show "Enrolled" vs "Enroll"
-    const enrollment = await this.enrollmentRepo.findOne({ where: { studentId, courseId } });
-    return !!enrollment; // converts a found row (or null) into a clean true/false
+  /**
+   * Checks whether a student is already enrolled in a course.
+   */
+  async isEnrolled(
+    studentId: string,
+    courseId: string,
+  ): Promise<boolean> {
+    const enrollment = await this.enrollmentRepo.findOne({
+      where: {
+        studentId,
+        courseId,
+      },
+    });
+
+    return !!enrollment;
   }
 }
