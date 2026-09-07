@@ -18,6 +18,6 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, swaggerConfig); // scans all your controllers/DTOs and generates the spec
   SwaggerModule.setup('api-docs', app, document); // mounts the interactive UI at http://localhost:3000/api-docs
 
-  await app.listen(3000);
+  await app.listen(3000, '0.0.0.0');
 }
 bootstrap();
