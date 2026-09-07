@@ -28,7 +28,7 @@ export default function StudentProfile() {
 const styles = StyleSheet.create({
   label: { fontSize: 15, color: COLORS.text, marginBottom: 8 },
   button: {
-    backgroundColor: "#dc2626",
+    backgroundColor: COLORS.danger,
     borderRadius: 12,
     paddingVertical: 14,
     alignItems: "center",

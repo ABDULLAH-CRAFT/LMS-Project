@@ -72,5 +72,5 @@ const styles = StyleSheet.create({
   cardMeta: { color: "rgba(255,255,255,0.85)", fontSize: 12 },
   cardLink: { color: "#fff", fontWeight: "700", marginTop: 8 },
   empty: { color: COLORS.muted, fontSize: 14, textAlign: "center", marginTop: 40 },
-  error: { color: "#dc2626", fontSize: 13 },
+  error: { color: COLORS.danger, fontSize: 13 },
 });

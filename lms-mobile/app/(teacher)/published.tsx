@@ -44,8 +44,8 @@ export default function Published() {
             <Text style={styles.title}>{item.title}</Text>
             <Text style={styles.desc} numberOfLines={2}>{item.description}</Text>
             <Text style={styles.price}>₹{item.price}</Text>
-            <View style={[styles.badge, { backgroundColor: "#d1fae5" }]}>
-              <Text style={[styles.badgeText, { color: "#059669" }]}>PUBLISHED</Text>
+            <View style={[styles.badge, { backgroundColor: COLORS.successBg }]}>
+              <Text style={[styles.badgeText, { color: COLORS.success }]}>PUBLISHED</Text>
             </View>
           </Pressable>
         )}
@@ -55,7 +55,14 @@ export default function Published() {
 }
 
 const styles = StyleSheet.create({
-  card: { borderWidth: 1, borderColor: COLORS.border, borderRadius: 14, padding: 16, gap: 6 },
+  card: {
+    backgroundColor: COLORS.surface,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    borderRadius: 14,
+    padding: 16,
+    gap: 6,
+  },
   title: { fontSize: 16, fontWeight: "700", color: COLORS.text },
   desc: { fontSize: 13, color: COLORS.muted },
   price: { fontSize: 14, fontWeight: "700", color: COLORS.primary },
@@ -68,5 +75,5 @@ const styles = StyleSheet.create({
   },
   badgeText: { fontSize: 11, fontWeight: "700" },
   empty: { color: COLORS.muted, fontSize: 14, textAlign: "center", marginTop: 40 },
-  error: { color: "#dc2626", fontSize: 13 },
+  error: { color: COLORS.danger, fontSize: 13 },
 });

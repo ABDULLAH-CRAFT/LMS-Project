@@ -76,6 +76,7 @@ export default function Browse() {
 
 const styles = StyleSheet.create({
   card: {
+    backgroundColor: COLORS.surface,
     borderWidth: 1,
     borderColor: COLORS.border,
     borderRadius: 14,
@@ -94,5 +95,5 @@ const styles = StyleSheet.create({
   },
   enrollText: { color: "#fff", fontWeight: "700" },
   empty: { color: COLORS.muted, fontSize: 14, textAlign: "center", marginTop: 40 },
-  error: { color: "#dc2626", fontSize: 13, marginTop: 8 },
+  error: { color: COLORS.danger, fontSize: 13, marginTop: 8 },
 });

@@ -56,12 +56,12 @@ export default function TeacherDashboard() {
     <ScreenContainer title={`Hi, ${user?.name?.split(" ")[0] ?? "Teacher"} 👋`}>
       <ScrollView contentContainerStyle={{ gap: 16 }}>
         <View style={styles.row}>
-          <View style={[styles.statCard, { backgroundColor: "#ecfdf5" }]}>
-            <Text style={[styles.statNumber, { color: "#059669" }]}>{isLoading ? "—" : publishedCount}</Text>
+          <View style={[styles.statCard, { backgroundColor: COLORS.successBg }]}>
+            <Text style={[styles.statNumber, { color: COLORS.success }]}>{isLoading ? "—" : publishedCount}</Text>
             <Text style={styles.statLabel}>Published</Text>
           </View>
-          <View style={[styles.statCard, { backgroundColor: "#fffbeb" }]}>
-            <Text style={[styles.statNumber, { color: "#d97706" }]}>{isLoading ? "—" : draftCount}</Text>
+          <View style={[styles.statCard, { backgroundColor: COLORS.warningBg }]}>
+            <Text style={[styles.statNumber, { color: COLORS.warning }]}>{isLoading ? "—" : draftCount}</Text>
             <Text style={styles.statLabel}>Drafts</Text>
           </View>
         </View>
@@ -74,10 +74,17 @@ export default function TeacherDashboard() {
 
         {showForm && (
           <View style={styles.form}>
-            <TextInput style={styles.input} placeholder="Course title" value={title} onChangeText={setTitle} />
+            <TextInput
+              style={styles.input}
+              placeholder="Course title"
+              placeholderTextColor={COLORS.placeholder}
+              value={title}
+              onChangeText={setTitle}
+            />
             <TextInput
               style={[styles.input, { height: 90, textAlignVertical: "top" }]}
               placeholder="Description"
+              placeholderTextColor={COLORS.placeholder}
               multiline
               value={description}
               onChangeText={setDescription}
@@ -85,6 +92,7 @@ export default function TeacherDashboard() {
             <TextInput
               style={styles.input}
               placeholder="Price (e.g. 29.99)"
+              placeholderTextColor={COLORS.placeholder}
               keyboardType="decimal-pad"
               value={price}
               onChangeText={setPrice}
@@ -103,7 +111,7 @@ export default function TeacherDashboard() {
                 )}
               </Pressable>
               <Pressable
-                style={[styles.newButton, { flex: 1, backgroundColor: "#9ca3af" }]}
+                style={[styles.newButton, { flex: 1, backgroundColor: COLORS.surfaceStrong }]}
                 onPress={() => setShowForm(false)}
               >
                 <Text style={styles.newButtonText}>Cancel</Text>
@@ -130,12 +138,14 @@ const styles = StyleSheet.create({
   newButtonText: { color: "#fff", fontWeight: "700" },
   form: { gap: 10, borderWidth: 1, borderColor: COLORS.border, borderRadius: 14, padding: 14 },
   input: {
+    backgroundColor: COLORS.surface,
     borderWidth: 1,
     borderColor: COLORS.border,
     borderRadius: 10,
     paddingHorizontal: 14,
     paddingVertical: 12,
     fontSize: 15,
+    color: COLORS.text,
   },
-  error: { color: "#dc2626", fontSize: 13 },
+  error: { color: COLORS.danger, fontSize: 13 },
 });

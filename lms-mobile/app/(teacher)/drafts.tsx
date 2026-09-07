@@ -54,18 +54,25 @@ export default function Drafts() {
 }
 
 const styles = StyleSheet.create({
-  card: { borderWidth: 1, borderColor: COLORS.border, borderRadius: 14, padding: 16, gap: 6 },
+  card: {
+    backgroundColor: COLORS.surface,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    borderRadius: 14,
+    padding: 16,
+    gap: 6,
+  },
   title: { fontSize: 16, fontWeight: "700", color: COLORS.text },
   desc: { fontSize: 13, color: COLORS.muted },
   badge: {
     alignSelf: "flex-start",
-    backgroundColor: "#fef3c7",
+    backgroundColor: COLORS.warningBg,
     borderRadius: 6,
     paddingHorizontal: 8,
     paddingVertical: 3,
     marginTop: 4,
   },
-  badgeText: { color: "#d97706", fontSize: 11, fontWeight: "700" },
+  badgeText: { color: COLORS.warning, fontSize: 11, fontWeight: "700" },
   empty: { color: COLORS.muted, fontSize: 14, textAlign: "center", marginTop: 40 },
-  error: { color: "#dc2626", fontSize: 13 },
+  error: { color: COLORS.danger, fontSize: 13 },
 });

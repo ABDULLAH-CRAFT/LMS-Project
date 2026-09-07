@@ -19,7 +19,7 @@ export default function StudentDashboard() {
     <ScreenContainer title={`Hi, ${user?.name?.split(" ")[0] ?? "there"} 👋`}>
       <ScrollView contentContainerStyle={{ gap: 16 }}>
         <View style={styles.row}>
-          <View style={[styles.statCard, { backgroundColor: "#eef2ff" }]}>
+          <View style={styles.statCard}>
             <Text style={styles.statNumber}>{isLoading ? "—" : enrollments?.length ?? 0}</Text>
             <Text style={styles.statLabel}>Enrolled Courses</Text>
           </View>
@@ -50,7 +50,14 @@ export default function StudentDashboard() {
 
 const styles = StyleSheet.create({
   row: { flexDirection: "row", gap: 12 },
-  statCard: { flex: 1, borderRadius: 16, padding: 20 },
+  statCard: {
+    flex: 1,
+    borderRadius: 16,
+    padding: 20,
+    backgroundColor: COLORS.surface,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
   statNumber: { fontSize: 28, fontWeight: "800", color: COLORS.primary },
   statLabel: { fontSize: 13, color: COLORS.muted, marginTop: 4 },
   sectionTitle: { fontSize: 16, fontWeight: "700", color: COLORS.text, marginTop: 8 },
@@ -66,5 +73,5 @@ const styles = StyleSheet.create({
   },
   courseTitle: { fontSize: 15, fontWeight: "600", color: COLORS.text, flex: 1 },
   link: { color: COLORS.primary, fontWeight: "700" },
-  error: { color: "#dc2626", fontSize: 13 },
+  error: { color: COLORS.danger, fontSize: 13 },
 });

@@ -55,8 +55,15 @@ export default function CourseDetail() {
   const isEnrolled = enrollmentQuery.data === true;
 
   return (
-    <ScrollView style={{ flex: 1, backgroundColor: "#fff" }} contentContainerStyle={styles.container}>
-      <Stack.Screen options={{ headerShown: true, title: course.title }} />
+    <ScrollView style={{ flex: 1, backgroundColor: COLORS.background }} contentContainerStyle={styles.container}>
+      <Stack.Screen
+        options={{
+          headerShown: true,
+          title: course.title,
+          headerStyle: { backgroundColor: COLORS.background },
+          headerTintColor: COLORS.text,
+        }}
+      />
 
       <Text style={styles.title}>{course.title}</Text>
       <Text style={styles.desc}>{course.description}</Text>
@@ -119,5 +126,5 @@ const styles = StyleSheet.create({
   lessonRow: { flexDirection: "row", alignItems: "center", gap: 8, paddingVertical: 6, paddingLeft: 8 },
   lessonIcon: { fontSize: 14 },
   lessonTitle: { fontSize: 14, color: COLORS.text },
-  error: { color: "#dc2626", fontSize: 14 },
+  error: { color: COLORS.danger, fontSize: 14 },
 });

@@ -85,8 +85,15 @@ export default function CourseEditor() {
   const isDraft = course.status === CourseStatus.DRAFT;
 
   return (
-    <ScrollView style={{ flex: 1, backgroundColor: "#fff" }} contentContainerStyle={styles.container}>
-      <Stack.Screen options={{ headerShown: true, title: course.title }} />
+    <ScrollView style={{ flex: 1, backgroundColor: COLORS.background }} contentContainerStyle={styles.container}>
+      <Stack.Screen
+        options={{
+          headerShown: true,
+          title: course.title,
+          headerStyle: { backgroundColor: COLORS.background },
+          headerTintColor: COLORS.text,
+        }}
+      />
 
       <Text style={styles.title}>{course.title}</Text>
       <Text style={styles.desc}>{course.description}</Text>
@@ -129,6 +136,7 @@ export default function CourseEditor() {
               <TextInput
                 style={styles.input}
                 placeholder="Lesson title"
+                placeholderTextColor={COLORS.placeholder}
                 value={lessonTitle}
                 onChangeText={setLessonTitle}
               />
@@ -149,6 +157,7 @@ export default function CourseEditor() {
               <TextInput
                 style={[styles.input, { height: 70, textAlignVertical: "top" }]}
                 placeholder={lessonType === "video" ? "Video URL" : "Lesson text"}
+                placeholderTextColor={COLORS.placeholder}
                 multiline
                 value={lessonContent}
                 onChangeText={setLessonContent}
@@ -164,7 +173,7 @@ export default function CourseEditor() {
                   </Text>
                 </Pressable>
                 <Pressable
-                  style={[styles.smallButton, { flex: 1, backgroundColor: "#9ca3af" }]}
+                  style={[styles.smallButton, { flex: 1, backgroundColor: COLORS.surfaceStrong }]}
                   onPress={() => setAddingLessonToModuleId(null)}
                 >
                   <Text style={styles.smallButtonText}>Cancel</Text>
@@ -183,6 +192,7 @@ export default function CourseEditor() {
         <TextInput
           style={styles.input}
           placeholder="New module title (e.g. Getting Started)"
+          placeholderTextColor={COLORS.placeholder}
           value={moduleTitle}
           onChangeText={setModuleTitle}
         />
@@ -207,10 +217,10 @@ const styles = StyleSheet.create({
   desc: { fontSize: 14, color: COLORS.muted, marginTop: 4 },
   price: { fontSize: 18, fontWeight: "700", color: COLORS.primary, marginTop: 8 },
   badge: { alignSelf: "flex-start", borderRadius: 6, paddingHorizontal: 10, paddingVertical: 4, marginTop: 8 },
-  draftBadge: { backgroundColor: "#fef3c7" },
-  publishedBadge: { backgroundColor: "#d1fae5" },
-  draftText: { color: "#d97706", fontSize: 11, fontWeight: "700" },
-  publishedText: { color: "#059669", fontSize: 11, fontWeight: "700" },
+  draftBadge: { backgroundColor: COLORS.warningBg },
+  publishedBadge: { backgroundColor: COLORS.successBg },
+  draftText: { color: COLORS.warning, fontSize: 11, fontWeight: "700" },
+  publishedText: { color: COLORS.success, fontSize: 11, fontWeight: "700" },
   publishButton: {
     backgroundColor: COLORS.primary,
     borderRadius: 12,
@@ -220,7 +230,7 @@ const styles = StyleSheet.create({
   },
   publishButtonText: { color: "#fff", fontWeight: "700" },
   sectionTitle: { fontSize: 17, fontWeight: "700", color: COLORS.text, marginTop: 24, marginBottom: 10 },
-  module: { marginBottom: 18, borderWidth: 1, borderColor: COLORS.border, borderRadius: 12, padding: 14 },
+  module: { marginBottom: 18, backgroundColor: COLORS.surface, borderWidth: 1, borderColor: COLORS.border, borderRadius: 12, padding: 14 },
   moduleTitle: { fontSize: 15, fontWeight: "700", color: COLORS.text, marginBottom: 6 },
   lessonRow: { flexDirection: "row", alignItems: "center", gap: 8, paddingVertical: 6, paddingLeft: 8 },
   lessonIcon: { fontSize: 14 },
@@ -229,12 +239,14 @@ const styles = StyleSheet.create({
   lessonForm: { marginTop: 10, gap: 8 },
   moduleForm: { gap: 8, marginTop: 8 },
   input: {
+    backgroundColor: COLORS.surface,
     borderWidth: 1,
     borderColor: COLORS.border,
     borderRadius: 10,
     paddingHorizontal: 12,
     paddingVertical: 10,
     fontSize: 14,
+    color: COLORS.text,
   },
   smallButton: { backgroundColor: COLORS.primary, borderRadius: 10, paddingVertical: 10, alignItems: "center" },
   smallButtonText: { color: "#fff", fontWeight: "700", fontSize: 13 },
@@ -242,5 +254,5 @@ const styles = StyleSheet.create({
   typeChipActive: { backgroundColor: COLORS.primary, borderColor: COLORS.primary },
   typeChipText: { fontSize: 13, color: COLORS.text },
   typeChipTextActive: { fontSize: 13, color: "#fff", fontWeight: "700" },
-  error: { color: "#dc2626", fontSize: 14 },
+  error: { color: COLORS.danger, fontSize: 14 },
 });

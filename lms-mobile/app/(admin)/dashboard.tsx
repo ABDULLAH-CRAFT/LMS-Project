@@ -20,14 +20,14 @@ export default function AdminDashboard() {
     <ScreenContainer title={`Hi, ${user?.name ?? "Admin"} 👋`}>
       <ScrollView contentContainerStyle={{ gap: 16 }}>
         <View style={styles.row}>
-          <View style={[styles.statCard, { backgroundColor: "#f5f3ff" }]}>
-            <Text style={[styles.statNumber, { color: "#7c3aed" }]}>
+          <View style={[styles.statCard, { backgroundColor: COLORS.surface }]}>
+            <Text style={[styles.statNumber, { color: COLORS.primary }]}>
               {isLoading ? "—" : teachersQuery.data?.length ?? 0}
             </Text>
             <Text style={styles.statLabel}>Teachers</Text>
           </View>
-          <View style={[styles.statCard, { backgroundColor: "#ecfdf5" }]}>
-            <Text style={[styles.statNumber, { color: "#059669" }]}>
+          <View style={[styles.statCard, { backgroundColor: COLORS.successBg }]}>
+            <Text style={[styles.statNumber, { color: COLORS.success }]}>
               {isLoading ? "—" : coursesQuery.data?.length ?? 0}
             </Text>
             <Text style={styles.statLabel}>Published Courses</Text>
@@ -47,7 +47,7 @@ export default function AdminDashboard() {
 
 const styles = StyleSheet.create({
   row: { flexDirection: "row", gap: 12 },
-  statCard: { flex: 1, borderRadius: 16, padding: 20 },
+  statCard: { flex: 1, borderRadius: 16, padding: 20, borderWidth: 1, borderColor: COLORS.border },
   statNumber: { fontSize: 28, fontWeight: "800" },
   statLabel: { fontSize: 13, color: COLORS.muted, marginTop: 4 },
   sectionTitle: { fontSize: 16, fontWeight: "700", color: COLORS.text, marginTop: 8 },

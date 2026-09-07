@@ -72,10 +72,15 @@ export default function Teachers() {
 
             {showForm && (
               <View style={styles.form}>
-                <TextInput style={styles.input} placeholder="Full name" value={name} onChangeText={setName} />
+                <TextInput style={styles.input} placeholder="Full name"
+                  placeholderTextColor={COLORS.placeholder}
+                  value={name}
+                  onChangeText={setName}
+                />
                 <TextInput
                   style={styles.input}
                   placeholder="Email"
+                  placeholderTextColor={COLORS.placeholder}
                   autoCapitalize="none"
                   keyboardType="email-address"
                   value={email}
@@ -84,6 +89,7 @@ export default function Teachers() {
                 <TextInput
                   style={styles.input}
                   placeholder="Temporary password (min 6 chars)"
+                  placeholderTextColor={COLORS.placeholder}
                   secureTextEntry
                   value={password}
                   onChangeText={setPassword}
@@ -102,7 +108,7 @@ export default function Teachers() {
                     )}
                   </Pressable>
                   <Pressable
-                    style={[styles.newButton, { flex: 1, backgroundColor: "#9ca3af" }]}
+                    style={[styles.newButton, { flex: 1, backgroundColor: COLORS.surfaceStrong }]}
                     onPress={() => setShowForm(false)}
                   >
                     <Text style={styles.newButtonText}>Cancel</Text>
@@ -135,18 +141,27 @@ const styles = StyleSheet.create({
   newButtonText: { color: "#fff", fontWeight: "700" },
   form: { gap: 10, borderWidth: 1, borderColor: COLORS.border, borderRadius: 14, padding: 14 },
   input: {
+    backgroundColor: COLORS.surface,
     borderWidth: 1,
     borderColor: COLORS.border,
     borderRadius: 10,
     paddingHorizontal: 14,
     paddingVertical: 12,
     fontSize: 15,
+    color: COLORS.text,
   },
-  card: { borderWidth: 1, borderColor: COLORS.border, borderRadius: 14, padding: 16, gap: 4 },
+  card: {
+    backgroundColor: COLORS.surface,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    borderRadius: 14,
+    padding: 16,
+    gap: 4,
+  },
   teacherName: { fontSize: 16, fontWeight: "700", color: COLORS.text },
   teacherEmail: { fontSize: 13, color: COLORS.muted },
   teacherDate: { fontSize: 12, color: COLORS.muted },
   empty: { color: COLORS.muted, fontSize: 14, textAlign: "center", marginTop: 20 },
-  error: { color: "#dc2626", fontSize: 13 },
-  success: { color: "#059669", fontSize: 13, fontWeight: "600" },
+  error: { color: COLORS.danger, fontSize: 13 },
+  success: { color: COLORS.success, fontSize: 13, fontWeight: "600" },
 });
