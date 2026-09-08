@@ -21,10 +21,8 @@ export async function checkEnrollment(courseId: string): Promise<boolean> {
   return data.enrolled;
 }
 
-export async function enrollInCourse(courseId: string): Promise<Enrollment> {
-  const { data } = await apiClient.post<Enrollment>("/enrollments", { courseId });
-  return data;
-}
+// NOTE: enrolling is no longer a plain POST — the backend uses a cart-based
+// checkout + Razorpay verify flow. See hooks/useEnrollCourse.ts.
 
 export async function getCurriculum(courseId: string): Promise<CourseModuleWithLessons[]> {
   const { data } = await apiClient.get<CourseModuleWithLessons[]>(`/courses/${courseId}/curriculum`);

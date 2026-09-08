@@ -1,8 +1,11 @@
 import { Tabs } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { ROLE_ACCENTS } from "../../constants/theme";
+import { ROLE_ACCENTS, COLORS } from "../../constants/theme";
+import { useCart } from "../../context/CartContext";
 
 export default function StudentLayout() {
+  const { items } = useCart();
+
   return (
     <Tabs
       screenOptions={{
@@ -24,11 +27,21 @@ export default function StudentLayout() {
         options={{ title: "Browse", tabBarIcon: ({ color, size }) => <Ionicons name="compass" color={color} size={size} /> }}
       />
       <Tabs.Screen
+        name="cart"
+        options={{
+          title: "Cart",
+          tabBarIcon: ({ color, size }) => <Ionicons name="cart" color={color} size={size} />,
+          tabBarBadge: items.length > 0 ? items.length : undefined,
+          tabBarBadgeStyle: { backgroundColor: COLORS.primary, fontSize: 10 },
+        }}
+      />
+      <Tabs.Screen
         name="profile"
         options={{ title: "Profile", tabBarIcon: ({ color, size }) => <Ionicons name="person" color={color} size={size} /> }}
       />
-      {/* course/[id] is a stack screen reached via router.push, hidden from the tab bar */}
+      {/* course/[id] and payment are stack screens reached via router.push, hidden from the tab bar */}
       <Tabs.Screen name="course/[id]" options={{ href: null }} />
+      <Tabs.Screen name="payment" options={{ href: null }} />
     </Tabs>
   );
 }

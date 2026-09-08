@@ -1,25 +1,18 @@
 import { FlatList, Text, View, StyleSheet, ActivityIndicator, Pressable, RefreshControl } from "react-native";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
 import ScreenContainer from "../../components/ScreenContainer";
-import { getPublishedCourses, enrollInCourse } from "../../lib/api/courses";
+import { getPublishedCourses } from "../../lib/api/courses";
+import { useCart } from "../../context/CartContext";
 import { COLORS } from "../../constants/theme";
 
 export default function Browse() {
   const router = useRouter();
-  const queryClient = useQueryClient();
+  const { addToCart, isInCart } = useCart();
 
   const { data, isLoading, isError, refetch, isRefetching } = useQuery({
     queryKey: ["published-courses"],
     queryFn: getPublishedCourses,
-  });
-
-  const enrollMutation = useMutation({
-    mutationFn: enrollInCourse,
-    onSuccess: () => {
-      // Refresh "My Courses" and dashboard stats since enrollment changed
-      queryClient.invalidateQueries({ queryKey: ["my-enrollments"] });
-    },
   });
 
   if (isLoading) {
@@ -46,30 +39,28 @@ export default function Browse() {
         contentContainerStyle={{ gap: 12 }}
         refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} />}
         ListEmptyComponent={<Text style={styles.empty}>No published courses yet.</Text>}
-        renderItem={({ item }) => (
-          <View style={styles.card}>
-            <Pressable onPress={() => router.push(`/(student)/course/${item.id}`)} style={{ flex: 1 }}>
-              <Text style={styles.title}>{item.title}</Text>
-              <Text style={styles.desc} numberOfLines={2}>{item.description}</Text>
-              <Text style={styles.price}>₹{item.price}</Text>
-            </Pressable>
-            <Pressable
-              style={styles.enrollButton}
-              disabled={enrollMutation.isPending}
-              onPress={() => enrollMutation.mutate(item.id)}
-            >
-              <Text style={styles.enrollText}>
-                {enrollMutation.isPending && enrollMutation.variables === item.id ? "..." : "Enroll"}
-              </Text>
-            </Pressable>
-          </View>
-        )}
+        renderItem={({ item }) => {
+          const inCart = isInCart(item.id);
+          return (
+            <View style={styles.card}>
+              <Pressable onPress={() => router.push(`/(student)/course/${item.id}`)}>
+                <Text style={styles.title}>{item.title}</Text>
+                <Text style={styles.desc} numberOfLines={2}>{item.description}</Text>
+              </Pressable>
+              <View style={styles.footer}>
+                <Text style={styles.price}>{Number(item.price) <= 0 ? "Free" : `₹${item.price}`}</Text>
+                <Pressable
+                  style={[styles.cartButton, inCart && styles.cartButtonDisabled]}
+                  disabled={inCart}
+                  onPress={() => addToCart(item)}
+                >
+                  <Text style={styles.cartButtonText}>{inCart ? "In cart ✓" : "Add to cart"}</Text>
+                </Pressable>
+              </View>
+            </View>
+          );
+        }}
       />
-      {enrollMutation.isError && (
-        <Text style={styles.error}>
-          {(enrollMutation.error as any)?.response?.data?.message ?? "Enrollment failed."}
-        </Text>
-      )}
     </ScreenContainer>
   );
 }
@@ -85,15 +76,18 @@ const styles = StyleSheet.create({
   },
   title: { fontSize: 16, fontWeight: "700", color: COLORS.text },
   desc: { fontSize: 13, color: COLORS.muted },
+  footer: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: 4 },
   price: { fontSize: 14, fontWeight: "700", color: COLORS.primary },
-  enrollButton: {
-    backgroundColor: COLORS.primary,
-    borderRadius: 10,
-    paddingVertical: 10,
-    alignItems: "center",
-    marginTop: 8,
+  cartButton: {
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    backgroundColor: COLORS.surfaceStrong,
+    borderRadius: 999,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
   },
-  enrollText: { color: "#fff", fontWeight: "700" },
+  cartButtonDisabled: { opacity: 0.5 },
+  cartButtonText: { color: COLORS.text, fontSize: 12, fontWeight: "600" },
   empty: { color: COLORS.muted, fontSize: 14, textAlign: "center", marginTop: 40 },
   error: { color: COLORS.danger, fontSize: 13, marginTop: 8 },
 });

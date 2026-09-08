@@ -1,13 +1,12 @@
 import { ScrollView, Text, View, StyleSheet, ActivityIndicator, Pressable } from "react-native";
-import { useLocalSearchParams, useRouter, Stack } from "expo-router";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { getCourseById, getCurriculum, checkEnrollment, enrollInCourse } from "../../../lib/api/courses";
+import { useLocalSearchParams, Stack } from "expo-router";
+import { useQuery } from "@tanstack/react-query";
+import { getCourseById, getCurriculum, checkEnrollment } from "../../../lib/api/courses";
+import { useEnrollCourse, getRazorpayErrorMessage } from "../../../hooks/useEnrollCourse";
 import { COLORS } from "../../../constants/theme";
 
 export default function CourseDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const router = useRouter();
-  const queryClient = useQueryClient();
 
   const courseQuery = useQuery({
     queryKey: ["course", id],
@@ -27,13 +26,7 @@ export default function CourseDetail() {
     enabled: !!id && enrollmentQuery.data === true, // only load lessons once enrolled
   });
 
-  const enrollMutation = useMutation({
-    mutationFn: () => enrollInCourse(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["enrollment-check", id] });
-      queryClient.invalidateQueries({ queryKey: ["my-enrollments"] });
-    },
-  });
+  const enrollMutation = useEnrollCourse();
 
   if (courseQuery.isLoading) {
     return (
@@ -73,12 +66,16 @@ export default function CourseDetail() {
         <Pressable
           style={styles.enrollButton}
           disabled={enrollMutation.isPending}
-          onPress={() => enrollMutation.mutate()}
+          onPress={() => enrollMutation.mutate({ courseIds: [id] })}
         >
           <Text style={styles.enrollText}>
             {enrollMutation.isPending ? "Enrolling..." : "Enroll in this Course"}
           </Text>
         </Pressable>
+      )}
+
+      {enrollMutation.isError && (
+        <Text style={styles.error}>{getRazorpayErrorMessage(enrollMutation.error)}</Text>
       )}
 
       {isEnrolled && (
@@ -126,5 +123,5 @@ const styles = StyleSheet.create({
   lessonRow: { flexDirection: "row", alignItems: "center", gap: 8, paddingVertical: 6, paddingLeft: 8 },
   lessonIcon: { fontSize: 14 },
   lessonTitle: { fontSize: 14, color: COLORS.text },
-  error: { color: COLORS.danger, fontSize: 14 },
+  error: { color: COLORS.danger, fontSize: 14, marginTop: 8 },
 });
