@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Patch, Body, Param, UseGuards, Req } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Body, Param, Query, UseGuards, Req } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { JwtAuthGuard } from 'src/auth/guard/jwt-auth.guard';
 import { RolesGuard } from 'src/common/roles.guard';
@@ -13,9 +13,9 @@ export class CoursesController {
   constructor(private coursesService: CoursesService) {}
 
   @Get() // GET /courses — public catalog, checked first, no wildcard risk
-  @ApiOperation({ summary: 'Get all published courses (public)' })
-  findPublished() {
-    return this.coursesService.findPublished();
+  @ApiOperation({ summary: 'Get all published courses (public), optionally filtered by ?search=' })
+  findPublished(@Query('search') search?: string) {
+    return this.coursesService.findPublished(search);
   }
 
   @Get('mine') // MOVED — must come before ':id', since 'mine' would otherwise get swallowed by the wildcard route below

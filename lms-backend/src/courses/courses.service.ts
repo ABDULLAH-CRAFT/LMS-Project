@@ -1,6 +1,6 @@
 import { Injectable, ForbiddenException, NotFoundException } from '@nestjs/common'; // built-in exceptions that map to proper HTTP status codes
 import { InjectRepository } from '@nestjs/typeorm'; // lets us inject a TypeORM repository
-import { Repository } from 'typeorm'; // generic repository type with query methods
+import { Repository, ILike } from 'typeorm'; // generic repository type with query methods, ILike for case-insensitive search
 import { Course, CourseStatus } from 'src/entities/course.entity';
 import { CreateCourseDto } from './dto/create-course.dto';
 
@@ -15,9 +15,13 @@ export class CoursesService {
     return this.courseRepo.save(course); // actually writes it to the database
   }
 
-  findPublished() { // used by the student catalog — only ever returns published courses
+  findPublished(search?: string) { // used by the student catalog — only ever returns published courses
+    const trimmed = search?.trim();
     return this.courseRepo.find({
-      where: { status: CourseStatus.PUBLISHED }, // filters out drafts entirely
+      where: {
+        status: CourseStatus.PUBLISHED, // filters out drafts entirely
+        ...(trimmed ? { title: ILike(`%${trimmed}%`) } : {}), // case-insensitive partial match on title, only applied when a search term is given
+      },
       order: { createdAt: 'DESC' }, // newest courses first
     });
   }

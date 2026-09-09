@@ -2,7 +2,7 @@ import { ScrollView, Text, View, StyleSheet, ActivityIndicator, Pressable } from
 import { useLocalSearchParams, Stack } from "expo-router";
 import { useQuery } from "@tanstack/react-query";
 import { getCourseById, getCurriculum, checkEnrollment } from "../../../lib/api/courses";
-import { useEnrollCourse, getRazorpayErrorMessage } from "../../../hooks/useEnrollCourse";
+import { useCart } from "@/context/CartContext";
 import { COLORS } from "../../../constants/theme";
 
 export default function CourseDetail() {
@@ -26,7 +26,7 @@ export default function CourseDetail() {
     enabled: !!id && enrollmentQuery.data === true, // only load lessons once enrolled
   });
 
-  const enrollMutation = useEnrollCourse();
+const { addToCart, isInCart } = useCart();
 
   if (courseQuery.isLoading) {
     return (
@@ -62,21 +62,20 @@ export default function CourseDetail() {
       <Text style={styles.desc}>{course.description}</Text>
       <Text style={styles.price}>₹{course.price}</Text>
 
-      {!isEnrolled && (
-        <Pressable
-          style={styles.enrollButton}
-          disabled={enrollMutation.isPending}
-          onPress={() => enrollMutation.mutate({ courseIds: [id] })}
-        >
-          <Text style={styles.enrollText}>
-            {enrollMutation.isPending ? "Enrolling..." : "Enroll in this Course"}
-          </Text>
-        </Pressable>
-      )}
-
-      {enrollMutation.isError && (
-        <Text style={styles.error}>{getRazorpayErrorMessage(enrollMutation.error)}</Text>
-      )}
+{!isEnrolled && (
+  <Pressable
+    style={[
+      styles.enrollButton,
+      isInCart(course.id) && styles.addedButton,
+    ]}
+    disabled={isInCart(course.id)}
+    onPress={() => addToCart(course)}
+  >
+    <Text style={styles.enrollText}>
+      {isInCart(course.id) ? "Added to Cart ✓" : "Add to Cart"}
+    </Text>
+  </Pressable>
+)}
 
       {isEnrolled && (
         <View style={{ marginTop: 20 }}>
@@ -124,4 +123,7 @@ const styles = StyleSheet.create({
   lessonIcon: { fontSize: 14 },
   lessonTitle: { fontSize: 14, color: COLORS.text },
   error: { color: COLORS.danger, fontSize: 14, marginTop: 8 },
+  addedButton: {
+  opacity: 0.6,
+},
 });

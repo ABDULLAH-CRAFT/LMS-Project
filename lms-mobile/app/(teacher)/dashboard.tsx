@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ScrollView, Text, View, TextInput, Pressable, StyleSheet, ActivityIndicator } from "react-native";
+import { ScrollView, Text, View, TextInput, Pressable, StyleSheet, ActivityIndicator, RefreshControl } from "react-native";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
 import ScreenContainer from "../../components/ScreenContainer";
@@ -19,7 +19,7 @@ export default function TeacherDashboard() {
   const [price, setPrice] = useState("");
   const [error, setError] = useState<string | null>(null);
 
-  const { data: courses, isLoading } = useQuery({
+  const { data: courses, isLoading, refetch, isRefetching } = useQuery({
     queryKey: ["my-teacher-courses"],
     queryFn: getMyTeacherCourses,
   });
@@ -54,7 +54,10 @@ export default function TeacherDashboard() {
 
   return (
     <ScreenContainer title={`Hi, ${user?.name?.split(" ")[0] ?? "Teacher"} 👋`}>
-      <ScrollView contentContainerStyle={{ gap: 16 }}>
+      <ScrollView
+        contentContainerStyle={{ gap: 16 }}
+        refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor={COLORS.primary} />}
+      >
         <View style={styles.row}>
           <View style={[styles.statCard, { backgroundColor: COLORS.successBg }]}>
             <Text style={[styles.statNumber, { color: COLORS.success }]}>{isLoading ? "—" : publishedCount}</Text>

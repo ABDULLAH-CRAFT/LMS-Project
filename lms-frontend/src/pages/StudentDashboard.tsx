@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import { api } from '../lib/axios';
 import type { Course } from '../types/course';
 import DashboardLayout from '../components/DashboardLayout';
@@ -8,24 +8,27 @@ import CourseGridSkeleton from '../components/CourseGridSkeleton';
 import { studentSidebarSections } from '../config/studentSidebar';
 import { useCurrentUser } from '../hooks/useCurrentUser';
 import { useCart } from '../context/CartComtext';
-
+import { useDebouncedValue } from '../hooks/useDebouncedValue';
 
 export default function StudentDashboard() {
-  const {addToCart,isInCart}=useCart()
+  const { addToCart, isInCart } = useCart();
   const [search, setSearch] = useState('');
+  const debouncedSearch = useDebouncedValue(search, 400); // waits 400ms after typing stops before hitting the backend
   const { data: user } = useCurrentUser(); // real logged-in student's data, for the greeting
 
   const coursesQuery = useQuery({
-    queryKey: ['published-courses'],
+    queryKey: ['published-courses', debouncedSearch],
     queryFn: async () => {
-      const response = await api.get<Course[]>('/courses');
+      const response = await api.get<Course[]>('/courses', {
+        params: debouncedSearch ? { search: debouncedSearch } : undefined,
+      });
       return response.data;
     },
+    placeholderData: keepPreviousData, // keeps showing the last results while a new search term loads, instead of flashing the skeleton
   });
 
-  const filteredCourses = coursesQuery.data?.filter((course) =>
-    course.title.toLowerCase().includes(search.toLowerCase()),
-  );
+  const courses = coursesQuery.data;
+  const isInitialLoad = coursesQuery.isLoading;
 
   return (
     <DashboardLayout sidebarSections={studentSidebarSections}>
@@ -45,11 +48,14 @@ export default function StudentDashboard() {
           onChange={(e) => setSearch(e.target.value)}
           className="w-full bg-white/[0.04] border border-white/10 rounded-full pl-11 pr-5 py-3 text-sm text-white placeholder:text-gray-600 outline-none focus:border-purple-500/50 focus:ring-4 focus:ring-purple-500/10 transition" // CHANGED — glass input matching auth pages
         />
+        {coursesQuery.isFetching && !isInitialLoad && (
+          <div className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 border-2 border-purple-500/30 border-t-purple-400 rounded-full animate-spin" /> // small inline spinner while a debounced search term is in flight
+        )}
       </div>
 
-      {coursesQuery.isLoading && <CourseGridSkeleton />}
+      {isInitialLoad && <CourseGridSkeleton />}
 
-      {!coursesQuery.isLoading && filteredCourses?.length === 0 && (
+      {!isInitialLoad && courses?.length === 0 && (
         <div className="text-center py-20">
           <div className="w-14 h-14 rounded-full bg-white/5 border border-white/10 flex items-center justify-center mx-auto mb-4"> {/* CHANGED — glass circle */}
             <svg className="w-6 h-6 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -61,9 +67,9 @@ export default function StudentDashboard() {
         </div>
       )}
 
-      {!coursesQuery.isLoading && filteredCourses && filteredCourses.length > 0 && (
+      {!isInitialLoad && courses && courses.length > 0 && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredCourses.map((course, index) => (
+          {courses.map((course, index) => (
 <CourseCard
   key={course.id}
   course={course}

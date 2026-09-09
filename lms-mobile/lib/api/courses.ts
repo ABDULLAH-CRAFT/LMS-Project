@@ -1,7 +1,7 @@
 import { apiClient } from "./client";
 import { Course, Enrollment, CourseModuleWithLessons } from "../../types/course";
 
-export async function getPublishedCourses(): Promise<Course[]> {
+export async function getPublishedCourses(search?: string): Promise<Course[]> {
   const { data } = await apiClient.get<Course[]>("/courses");
   return data;
 }

@@ -1,4 +1,4 @@
-import { ScrollView, Text, View, StyleSheet, ActivityIndicator } from "react-native";
+import { ScrollView, Text, View, StyleSheet, ActivityIndicator, RefreshControl } from "react-native";
 import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
 import ScreenContainer from "../../components/ScreenContainer";
@@ -15,10 +15,19 @@ export default function AdminDashboard() {
   const coursesQuery = useQuery({ queryKey: ["published-courses"], queryFn: getPublishedCourses });
 
   const isLoading = teachersQuery.isLoading || coursesQuery.isLoading;
+  const isRefetching = teachersQuery.isRefetching || coursesQuery.isRefetching;
+
+  function handleRefresh() {
+    teachersQuery.refetch();
+    coursesQuery.refetch();
+  }
 
   return (
     <ScreenContainer title={`Hi, ${user?.name ?? "Admin"} 👋`}>
-      <ScrollView contentContainerStyle={{ gap: 16 }}>
+      <ScrollView
+        contentContainerStyle={{ gap: 16 }}
+        refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={handleRefresh} tintColor={COLORS.primary} />}
+      >
         <View style={styles.row}>
           <View style={[styles.statCard, { backgroundColor: COLORS.surface }]}>
             <Text style={[styles.statNumber, { color: COLORS.primary }]}>

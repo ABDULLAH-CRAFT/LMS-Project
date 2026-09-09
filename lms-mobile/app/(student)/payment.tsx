@@ -1,106 +1,239 @@
-import { useEffect, useState } from "react";
-import { View, Text, StyleSheet, ActivityIndicator, Pressable } from "react-native";
+
+import { View, Text, StyleSheet, ScrollView, Pressable } from "react-native";
 import { useRouter } from "expo-router";
-import { useQueryClient } from "@tanstack/react-query";
 import { Ionicons } from "@expo/vector-icons";
 import { useCart } from "../../context/CartContext";
-import { useEnrollCourse, getRazorpayErrorMessage } from "../../hooks/useEnrollCourse";
 import { COLORS } from "../../constants/theme";
 
-type Status = "processing" | "success" | "error";
-
 export default function Payment() {
-  const { items, clearCart, total } = useCart();
+  const { items, total } = useCart();
   const router = useRouter();
-  const queryClient = useQueryClient();
-  const enrollMutation = useEnrollCourse();
-  const [status, setStatus] = useState<Status>("processing");
-  const [errorMessage, setErrorMessage] = useState("");
-
-  function runPayment() {
-    setStatus("processing");
-    enrollMutation.mutate(
-      { courseIds: items.map((c) => c.id) },
-      {
-        onSuccess: () => {
-          clearCart();
-          queryClient.invalidateQueries({ queryKey: ["my-enrollments"] });
-          setStatus("success");
-        },
-        onError: (error) => {
-          setErrorMessage(getRazorpayErrorMessage(error));
-          setStatus("error");
-        },
-      }
-    );
-  }
-
-  // Kick off payment as soon as the screen opens.
-  useEffect(() => {
-    if (items.length === 0) {
-      router.replace("/(student)/cart");
-      return;
-    }
-    runPayment();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   return (
-    <View style={styles.container}>
-      {status === "processing" && (
-        <>
-          <ActivityIndicator size="large" color={COLORS.primary} />
-          <Text style={styles.title}>Processing payment...</Text>
-          <Text style={styles.subtitle}>Charging ₹{total} for {items.length} {items.length === 1 ? "course" : "courses"}</Text>
-        </>
-      )}
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={styles.content}
+    >
+      <View style={styles.header}>
+        <Text style={styles.title}>Checkout</Text>
+        <Text style={styles.subtitle}>
+          Review your order before proceeding
+        </Text>
+      </View>
 
-      {status === "success" && (
-        <>
-          <View style={styles.iconCircleSuccess}>
-            <Ionicons name="checkmark" size={36} color={COLORS.success} />
-          </View>
-          <Text style={styles.title}>Payment successful</Text>
-          <Text style={styles.subtitle}>You're enrolled — your courses are ready.</Text>
-          <Pressable style={styles.primaryButton} onPress={() => router.replace("/(student)/my-courses")}>
-            <Text style={styles.primaryButtonText}>Go to My Courses</Text>
-          </Pressable>
-        </>
-      )}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Order Summary</Text>
 
-      {status === "error" && (
-        <>
-          <View style={styles.iconCircleError}>
-            <Ionicons name="close" size={36} color={COLORS.danger} />
+        {items.map((course) => (
+          <View key={course.id} style={styles.courseRow}>
+            <View style={styles.courseInfo}>
+              <Text style={styles.courseTitle}>{course.title}</Text>
+              <Text style={styles.coursePrice}>₹{course.price}</Text>
+            </View>
+
+            <Ionicons
+              name="book-outline"
+              size={22}
+              color={COLORS.primary}
+            />
           </View>
-          <Text style={styles.title}>Payment failed</Text>
-          <Text style={styles.subtitle}>{errorMessage}. Nothing was charged.</Text>
-          <Pressable style={styles.primaryButton} onPress={runPayment}>
-            <Text style={styles.primaryButtonText}>Try Again</Text>
-          </Pressable>
-          <Pressable style={styles.secondaryButton} onPress={() => router.back()}>
-            <Text style={styles.secondaryButtonText}>Back to Cart</Text>
-          </Pressable>
-        </>
-      )}
-    </View>
+        ))}
+      </View>
+
+      <View style={styles.totalCard}>
+        <View style={styles.totalRow}>
+          <Text style={styles.totalLabel}>Subtotal</Text>
+          <Text style={styles.totalValue}>₹{total}</Text>
+        </View>
+
+        <View style={styles.divider} />
+
+        <View style={styles.totalRow}>
+          <Text style={styles.finalTotalLabel}>Total</Text>
+          <Text style={styles.finalTotalValue}>₹{total}</Text>
+        </View>
+      </View>
+
+      <View style={styles.infoBox}>
+        <Ionicons
+          name="information-circle-outline"
+          size={22}
+          color={COLORS.primary}
+        />
+
+        <Text style={styles.infoText}>
+          Payment functionality is currently unavailable. You can review your
+          order here.
+        </Text>
+      </View>
+
+      <Pressable
+        style={styles.checkoutButton}
+        onPress={() => {}}
+      >
+        <Text style={styles.checkoutButtonText}>
+          Proceed to Payment
+        </Text>
+      </Pressable>
+
+      <Pressable
+        style={styles.backButton}
+        onPress={() => router.back()}
+      >
+        <Text style={styles.backButtonText}>Back to Cart</Text>
+      </Pressable>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.background, alignItems: "center", justifyContent: "center", padding: 32, gap: 6 },
-  title: { color: COLORS.text, fontSize: 18, fontWeight: "800", marginTop: 16, textAlign: "center" },
-  subtitle: { color: COLORS.muted, fontSize: 13, textAlign: "center", marginTop: 4 },
-  iconCircleSuccess: {
-    width: 72, height: 72, borderRadius: 36, backgroundColor: COLORS.successBg,
-    borderWidth: 1, borderColor: COLORS.success, alignItems: "center", justifyContent: "center",
+  container: {
+    flex: 1,
+    backgroundColor: COLORS.background,
   },
-  iconCircleError: {
-    width: 72, height: 72, borderRadius: 36, backgroundColor: COLORS.dangerBg,
-    borderWidth: 1, borderColor: COLORS.danger, alignItems: "center", justifyContent: "center",
+
+  content: {
+    padding: 20,
+    paddingBottom: 40,
   },
-  primaryButton: { backgroundColor: COLORS.primary, borderRadius: 999, paddingHorizontal: 28, paddingVertical: 14, marginTop: 22 },
-  primaryButtonText: { color: "#fff", fontWeight: "700", fontSize: 14 },
-  secondaryButton: { marginTop: 14 },
-  secondaryButtonText: { color: COLORS.muted, fontSize: 13 },
+
+  header: {
+    marginBottom: 24,
+  },
+
+  title: {
+    fontSize: 28,
+    fontWeight: "800",
+    color: COLORS.text,
+  },
+
+  subtitle: {
+    fontSize: 14,
+    color: COLORS.muted,
+    marginTop: 6,
+  },
+
+  section: {
+    backgroundColor: "#fff",
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 16,
+  },
+
+  sectionTitle: {
+    fontSize: 17,
+    fontWeight: "700",
+    color: COLORS.text,
+    marginBottom: 16,
+  },
+
+  courseRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingVertical: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: "#eee",
+  },
+
+  courseInfo: {
+    flex: 1,
+    marginRight: 12,
+  },
+
+  courseTitle: {
+    fontSize: 15,
+    fontWeight: "600",
+    color: COLORS.text,
+  },
+
+  coursePrice: {
+    fontSize: 14,
+    color: COLORS.primary,
+    fontWeight: "700",
+    marginTop: 5,
+  },
+
+  totalCard: {
+    backgroundColor: "#fff",
+    borderRadius: 16,
+    padding: 18,
+    marginBottom: 16,
+  },
+
+  totalRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+
+  totalLabel: {
+    fontSize: 14,
+    color: COLORS.muted,
+  },
+
+  totalValue: {
+    fontSize: 15,
+    fontWeight: "600",
+    color: COLORS.text,
+  },
+
+  divider: {
+    height: 1,
+    backgroundColor: "#eee",
+    marginVertical: 14,
+  },
+
+  finalTotalLabel: {
+    fontSize: 18,
+    fontWeight: "800",
+    color: COLORS.text,
+  },
+
+  finalTotalValue: {
+    fontSize: 20,
+    fontWeight: "800",
+    color: COLORS.primary,
+  },
+
+  infoBox: {
+    flexDirection: "row",
+    gap: 10,
+    backgroundColor: "#eef4ff",
+    padding: 14,
+    borderRadius: 12,
+    marginBottom: 20,
+  },
+
+  infoText: {
+    flex: 1,
+    fontSize: 13,
+    lineHeight: 19,
+    color: COLORS.text,
+  },
+
+  checkoutButton: {
+    backgroundColor: COLORS.primary,
+    paddingVertical: 15,
+    borderRadius: 12,
+    alignItems: "center",
+  },
+
+  checkoutButtonText: {
+    color: "#fff",
+    fontSize: 15,
+    fontWeight: "700",
+  },
+
+  backButton: {
+    alignItems: "center",
+    paddingVertical: 16,
+    marginTop: 6,
+  },
+
+  backButtonText: {
+    color: COLORS.muted,
+    fontSize: 14,
+    fontWeight: "600",
+  },
 });

@@ -1,4 +1,4 @@
-import { Text, View, StyleSheet, ActivityIndicator, ScrollView } from "react-native";
+import { Text, View, StyleSheet, ActivityIndicator, ScrollView, RefreshControl } from "react-native";
 import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
 import ScreenContainer from "../../components/ScreenContainer";
@@ -10,14 +10,17 @@ export default function StudentDashboard() {
   const { user } = useAuth();
   const router = useRouter();
 
-  const { data: enrollments, isLoading, isError } = useQuery({
+  const { data: enrollments, isLoading, isError, refetch, isRefetching } = useQuery({
     queryKey: ["my-enrollments"],
     queryFn: getMyEnrollments,
   });
 
   return (
     <ScreenContainer title={`Hi, ${user?.name?.split(" ")[0] ?? "there"} 👋`}>
-      <ScrollView contentContainerStyle={{ gap: 16 }}>
+      <ScrollView
+        contentContainerStyle={{ gap: 16 }}
+        refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor={COLORS.primary} />}
+      >
         <View style={styles.row}>
           <View style={styles.statCard}>
             <Text style={styles.statNumber}>{isLoading ? "—" : enrollments?.length ?? 0}</Text>

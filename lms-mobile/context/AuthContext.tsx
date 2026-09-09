@@ -11,6 +11,7 @@ type AuthContextType = {
   login: (email: string, password: string) => Promise<void>;
   register: (email: string, password: string, name: string) => Promise<void>;
   logout: () => Promise<void>;
+  updateUser: (user: User) => void; // NEW — lets screens (e.g. profile edit) sync a fresh user object into context
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -62,9 +63,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(me);
   }, []);
 
+  const updateUser = useCallback((updated: User) => {
+    setUser(updated);
+  }, []);
+
   return (
     <AuthContext.Provider
-      value={{ user, isLoading, isAuthenticated: !!user, login, register, logout }}
+      value={{ user, isLoading, isAuthenticated: !!user, login, register, logout, updateUser }}
     >
       {children}
     </AuthContext.Provider>
