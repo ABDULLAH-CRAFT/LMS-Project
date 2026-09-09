@@ -39,7 +39,11 @@ export default function StudentLayout() {
         name="profile"
         options={{ title: "Profile", tabBarIcon: ({ color, size }) => <Ionicons name="person" color={color} size={size} /> }}
       />
-      {/* course/[id] and payment are stack screens reached via router.push, hidden from the tab bar */}
+
+      {/* Reachable via Profile screen links, hidden from the bottom bar */}
+      <Tabs.Screen name="assignments" options={{ href: null }} />
+      <Tabs.Screen name="messages" options={{ href: null }} />
+      <Tabs.Screen name="settings" options={{ href: null }} />
       <Tabs.Screen name="course/[id]" options={{ href: null }} />
       <Tabs.Screen name="payment" options={{ href: null }} />
     </Tabs>

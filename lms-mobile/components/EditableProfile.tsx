@@ -5,6 +5,8 @@ import ScreenContainer from "./ScreenContainer";
 import { useAuth } from "../context/AuthContext";
 import { updateProfile, changePassword } from "../lib/api/users";
 import { COLORS } from "../constants/theme";
+import { Ionicons } from "@expo/vector-icons"; // add this line
+
 
 export default function EditableProfile() {
   const { user, logout, updateUser } = useAuth();
@@ -141,7 +143,27 @@ export default function EditableProfile() {
           {savingPassword ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>Change Password</Text>}
         </Pressable>
       </View>
-
+      {/* More — screens moved off the bottom bar */}
+      <View style={styles.card}>
+        <Text style={styles.cardTitle}>More</Text>
+        {[
+          { label: "Assignments", icon: "document-text" as const, route: "/(student)/assignments" },
+          { label: "Messages", icon: "chatbubble-ellipses" as const, route: "/(student)/messages" },
+          { label: "Settings", icon: "settings" as const, route: "/(student)/settings" },
+        ].map((item, idx, arr) => (
+          <Pressable
+            key={item.route}
+            style={[styles.menuRow, idx === arr.length - 1 && styles.menuRowLast]}
+            onPress={() => router.push(item.route as any)}
+          >
+            <View style={styles.menuRowLeft}>
+              <Ionicons name={item.icon} size={18} color={COLORS.text} />
+              <Text style={styles.menuRowLabel}>{item.label}</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color={COLORS.mutedDark} />
+          </Pressable>
+        ))}
+      </View>
       <Pressable style={styles.logoutButton} onPress={handleLogout}>
         <Text style={styles.buttonText}>Log Out</Text>
       </Pressable>
@@ -189,4 +211,15 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginTop: 4,
   },
+    menuRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border,
+  },
+  menuRowLast: { borderBottomWidth: 0 },
+  menuRowLeft: { flexDirection: "row", alignItems: "center", gap: 10 },
+  menuRowLabel: { fontSize: 14, color: COLORS.text },
 });

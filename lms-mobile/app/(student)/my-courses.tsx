@@ -30,11 +30,13 @@ export default function MyCourses() {
   }
 
   return (
-    <ScreenContainer title="My Courses">
+    // scroll={false}: this screen owns a FlatList, which already scrolls itself.
+    <ScreenContainer title="My Courses" scroll={false}>
       <FlatList
+        style={styles.list}
         data={data}
         keyExtractor={(item) => item.id}
-        contentContainerStyle={{ gap: 14 }}
+        contentContainerStyle={{ gap: 14, paddingBottom: 24 }}
         refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} />}
         ListEmptyComponent={
           <Text style={styles.empty}>
@@ -67,6 +69,7 @@ export default function MyCourses() {
 }
 
 const styles = StyleSheet.create({
+  list: { flex: 1 },
   card: { borderRadius: 18, padding: 20, gap: 6 },
   cardTitle: { color: "#fff", fontSize: 17, fontWeight: "800" },
   cardMeta: { color: "rgba(255,255,255,0.85)", fontSize: 12 },

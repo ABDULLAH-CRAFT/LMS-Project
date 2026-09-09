@@ -23,7 +23,10 @@ export default function Browse() {
   });
 
   return (
-    <ScreenContainer title="Browse Courses">
+    // scroll={false}: this screen owns a FlatList, which already scrolls itself.
+    // Nesting it inside ScreenContainer's default ScrollView triggers the
+    // "VirtualizedLists should never be nested inside plain ScrollViews" warning.
+    <ScreenContainer title="Browse Courses" scroll={false}>
       <View style={styles.searchBar}>
         <Ionicons name="search" size={16} color={COLORS.mutedDark} />
         <TextInput
@@ -48,9 +51,10 @@ export default function Browse() {
         <Text style={styles.error}>Couldn't load courses. Pull down to retry.</Text>
       ) : (
         <FlatList
+          style={styles.list}
           data={data}
           keyExtractor={(item) => item.id}
-          contentContainerStyle={{ gap: 12 }}
+          contentContainerStyle={{ gap: 12, paddingBottom: 24 }}
           refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} />}
           ListHeaderComponent={
             // Shows briefly while the debounced search term is in flight,
@@ -105,6 +109,7 @@ const styles = StyleSheet.create({
     marginBottom: 14,
   },
   searchInput: { flex: 1, color: COLORS.text, fontSize: 14, padding: 0 },
+  list: { flex: 1 },
   card: {
     backgroundColor: COLORS.surface,
     borderWidth: 1,
