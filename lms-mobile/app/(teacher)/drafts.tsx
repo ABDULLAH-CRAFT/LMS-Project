@@ -32,11 +32,13 @@ export default function Drafts() {
   }
 
   return (
-    <ScreenContainer title="Drafts">
+    // scroll={false}: this screen owns a FlatList, which already scrolls itself.
+    <ScreenContainer title="Drafts" scroll={false}>
       <FlatList
+        style={styles.list}
         data={drafts}
         keyExtractor={(item) => item.id}
-        contentContainerStyle={{ gap: 12 }}
+        contentContainerStyle={{ gap: 12, paddingBottom: 24 }}
         refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} />}
         ListEmptyComponent={<Text style={styles.empty}>No drafts. Create one from the Dashboard tab.</Text>}
         renderItem={({ item }) => (
@@ -54,6 +56,7 @@ export default function Drafts() {
 }
 
 const styles = StyleSheet.create({
+  list: { flex: 1 },
   card: {
     backgroundColor: COLORS.surface,
     borderWidth: 1,

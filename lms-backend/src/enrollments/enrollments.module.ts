@@ -5,9 +5,10 @@ import { EnrollmentsService } from './enrollments.service'; // service
 import { EnrollmentsController } from './enrollments.controller'; // controller
 import { CoursesModule } from '../courses/courses.module'; // needed so we can inject CoursesService
 import { PaymentsModule } from 'src/payment/payment.module';
+import { CartModule } from 'src/cart/cart.module'; // NEW — so EnrollmentsService can read/clear the persisted cart
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Enrollment]), CoursesModule,PaymentsModule], // registers the Enrollment repository AND imports CoursesModule for its exported service
+  imports: [TypeOrmModule.forFeature([Enrollment]), CoursesModule, PaymentsModule, CartModule], // registers the Enrollment repository AND imports CoursesModule for its exported service
   providers: [EnrollmentsService],
   controllers: [EnrollmentsController],
 })

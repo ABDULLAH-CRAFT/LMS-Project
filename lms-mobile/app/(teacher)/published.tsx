@@ -32,11 +32,13 @@ export default function Published() {
   }
 
   return (
-    <ScreenContainer title="Published">
+    // scroll={false}: this screen owns a FlatList, which already scrolls itself.
+    <ScreenContainer title="Published" scroll={false}>
       <FlatList
+        style={styles.list}
         data={published}
         keyExtractor={(item) => item.id}
-        contentContainerStyle={{ gap: 12 }}
+        contentContainerStyle={{ gap: 12, paddingBottom: 24 }}
         refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} />}
         ListEmptyComponent={<Text style={styles.empty}>Nothing published yet.</Text>}
         renderItem={({ item }) => (
@@ -55,6 +57,7 @@ export default function Published() {
 }
 
 const styles = StyleSheet.create({
+  list: { flex: 1 },
   card: {
     backgroundColor: COLORS.surface,
     borderWidth: 1,

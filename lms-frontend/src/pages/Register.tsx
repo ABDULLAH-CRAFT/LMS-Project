@@ -34,6 +34,7 @@ export default function RegisterPage() {
     onSuccess: (data) => {
       localStorage.setItem('accessToken', data.accessToken);
       localStorage.setItem('refreshToken', data.refreshToken);
+      window.dispatchEvent(new Event('auth-changed'));
 
       navigate('/student');
     },

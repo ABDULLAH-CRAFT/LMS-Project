@@ -37,7 +37,9 @@ export default function StudentSettings() {
   const handleLogoutEverywhere = () => { // clears local session — a real "log out of all devices" would need a backend token-revocation list, which doesn't exist yet, so this is scoped honestly to just this device
     localStorage.removeItem('accessToken');
     localStorage.removeItem('refreshToken');
+    window.dispatchEvent(new Event('auth-changed'));
     navigate('/login');
+
   };
 
   return (

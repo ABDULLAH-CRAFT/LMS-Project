@@ -33,6 +33,7 @@ export default function LoginPage() {
     onSuccess: (data) => {
       localStorage.setItem('accessToken', data.accessToken);
       localStorage.setItem('refreshToken', data.refreshToken);
+    window.dispatchEvent(new Event('auth-changed'));
 
       const payload = JSON.parse(
         atob(data.accessToken.split('.')[1])

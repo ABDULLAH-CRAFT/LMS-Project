@@ -54,8 +54,10 @@ export default function Teachers() {
   };
 
   return (
-    <ScreenContainer title="Teachers">
+    // scroll={false}: this screen owns a FlatList, which already scrolls itself.
+    <ScreenContainer title="Teachers" scroll={false}>
       <FlatList
+        style={styles.list}
         data={data}
         keyExtractor={(item) => item.id}
         contentContainerStyle={{ gap: 12, paddingBottom: 20 }}
@@ -137,6 +139,7 @@ export default function Teachers() {
 }
 
 const styles = StyleSheet.create({
+  list: { flex: 1 },
   newButton: { backgroundColor: COLORS.primary, borderRadius: 12, paddingVertical: 14, alignItems: "center" },
   newButtonText: { color: "#fff", fontWeight: "700" },
   form: { gap: 10, borderWidth: 1, borderColor: COLORS.border, borderRadius: 14, padding: 14 },

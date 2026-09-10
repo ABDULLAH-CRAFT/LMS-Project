@@ -11,6 +11,7 @@ import { PaymentsService } from 'src/payment/payments.service';
 import { PaymentStatus } from 'src/payment/entities/payment.entity';
 import { CheckoutCartDto } from './dto/checkout-cart.dto';
 import { VerifyPaymentDto } from 'src/payment/dto/verify-payment.dto';
+import { CartService } from 'src/cart/cart.service';
 
 @Injectable()
 export class EnrollmentsService {
@@ -19,16 +20,29 @@ export class EnrollmentsService {
     private enrollmentRepo: Repository<Enrollment>,
     private coursesService: CoursesService,
     private paymentsService: PaymentsService,
+    private cartService: CartService,
   ) {}
 
   /**
    * Starts checkout for one or more courses at once.
    *
+   * If dto.courseIds is provided, checks out exactly those courses (used
+   * for a direct "Buy now" on a single course page, bypassing the cart).
+   * Otherwise, checks out everything currently saved in the student's
+   * persisted cart.
+   *
    * Free courses are enrolled immediately.
    * Paid courses are sent to Razorpay as one payment order.
    */
   async checkoutCart(studentId: string, dto: CheckoutCartDto) {
-    const uniqueCourseIds = [...new Set(dto.courseIds)];
+    const explicitIds = dto.courseIds && dto.courseIds.length > 0 ? dto.courseIds : null;
+    const courseIds = explicitIds ?? (await this.cartService.getCourseIdsForStudent(studentId));
+
+    if (!courseIds || courseIds.length === 0) {
+      throw new ConflictException('Your cart is empty');
+    }
+
+    const uniqueCourseIds = [...new Set(courseIds)];
 
     const alreadyEnrolled = await this.enrollmentRepo.find({
       where: uniqueCourseIds.map((courseId) => ({
@@ -73,6 +87,15 @@ export class EnrollmentsService {
       await this.enrollmentRepo.save(enrollment);
     }
 
+    // NEW — a free course is fully processed the moment it's enrolled,
+    // so drop it from the persisted cart right away.
+    if (freeCourses.length > 0) {
+      await this.cartService.removeItems(
+        studentId,
+        freeCourses.map((course) => course.id),
+      );
+    }
+
     // If there are no paid courses, we're done
     if (paidCourses.length === 0) {
       return {
@@ -89,7 +112,10 @@ export class EnrollmentsService {
       quantity: 1,
     }));
 
-    // Create one payment order for all paid courses
+    // Create one payment order for all paid courses.
+    // NOTE: paid courses stay in the cart until payment is actually
+    // confirmed (see confirmCart below) — if the user abandons Razorpay,
+    // the item should still be sitting in their cart afterward.
     const order = await this.paymentsService.createOrderForItems(
       studentId,
       lineItems,
@@ -106,8 +132,10 @@ export class EnrollmentsService {
   /**
    * Called after the frontend's Razorpay payment succeeds.
    *
-   * Verifies the payment and creates one Enrollment
-   * for every course_enrollment item in the payment.
+   * Verifies the payment, creates one Enrollment for every
+   * course_enrollment item in the payment, and clears those
+   * courses out of the student's persisted cart — this is the
+   * literal "cart converts to order" step.
    */
   async confirmCart(
     studentId: string,
@@ -124,11 +152,14 @@ export class EnrollmentsService {
 
     // Explicitly type this as Enrollment[]
     const enrollments: Enrollment[] = [];
+    const paidCourseIds: string[] = []; // NEW
 
     for (const item of payment.items) {
       if (item.referenceType !== 'course_enrollment') {
         continue;
       }
+
+      paidCourseIds.push(item.referenceId); // NEW
 
       const existing = await this.enrollmentRepo.findOne({
         where: {
@@ -152,6 +183,9 @@ export class EnrollmentsService {
 
       enrollments.push(savedEnrollment);
     }
+
+    // NEW — payment confirmed, these courses are owned now, not "in cart".
+    await this.cartService.removeItems(studentId, paidCourseIds);
 
     return {
       enrollments,

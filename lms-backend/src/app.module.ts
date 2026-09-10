@@ -8,6 +8,8 @@ import { MailModule } from './mail/mail.module';
 import { CoursesModule } from './courses/courses.module';
 import { EnrollmentsModule } from './enrollments/enrollments.module';
 import { CourseContentModule } from './course-content/course-content.module';
+import { CartModule } from './cart/cart.module';
+
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }), // makes ConfigService available everywhere without re-importing
@@ -31,6 +33,7 @@ import { CourseContentModule } from './course-content/course-content.module';
     CoursesModule,
     EnrollmentsModule,
     CourseContentModule,
+    CartModule,
   ],
 })
 export class AppModule {}

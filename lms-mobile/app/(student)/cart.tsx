@@ -9,7 +9,8 @@ export default function Cart() {
   const router = useRouter();
 
   return (
-    <ScreenContainer title="Shopping Cart">
+    // scroll={false}: the FlatList below already scrolls itself.
+    <ScreenContainer title="Shopping Cart" scroll={false}>
       {items.length === 0 ? (
         <View style={styles.emptyBox}>
           <Text style={styles.emptyText}>Your cart is empty.</Text>
@@ -20,6 +21,7 @@ export default function Cart() {
       ) : (
         <>
           <FlatList
+            style={styles.list}
             data={items}
             keyExtractor={(item) => item.id}
             contentContainerStyle={{ gap: 10 }}
@@ -74,6 +76,7 @@ const styles = StyleSheet.create({
     marginTop: 30,
   },
   emptyText: { color: COLORS.muted, marginBottom: 16 },
+  list: { flex: 1 },
   browseButton: { backgroundColor: COLORS.primary, borderRadius: 999, paddingHorizontal: 20, paddingVertical: 12 },
   browseButtonText: { color: "#fff", fontWeight: "700", fontSize: 13 },
   row: {
