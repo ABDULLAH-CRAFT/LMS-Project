@@ -1,22 +1,36 @@
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
-import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger'; // NEW — the two pieces that build and serve the docs UI
+import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
+import helmet from 'helmet';
 import { AppModule } from './app.module';
+import { AllExceptionsFilter } from './common/filters/http-exception.filter';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, { rawBody: true }); // rawBody needed for verifying the Razorpay webhook signature
+
+  app.use(helmet());
+
   app.useGlobalPipes(new ValidationPipe({ whitelist: true }));
-  app.enableCors();
+  app.useGlobalFilters(new AllExceptionsFilter());
 
-  const swaggerConfig = new DocumentBuilder() // NEW — builds the metadata shown at the top of the docs page
-    .setTitle('LMS API') // page title in the Swagger UI
-    .setDescription('API documentation for the LMS backend') // subtitle text
-    .setVersion('1.0') // just a version label, doesn't affect behavior
-    .addBearerAuth() // registers the "Bearer token" auth scheme so protected routes get an "Authorize" button in the UI
-    .build();
+  const allowedOrigins = (process.env.CORS_ORIGIN ?? '').split(',').filter(Boolean);
+  app.enableCors({
+    origin: allowedOrigins.length > 0 ? allowedOrigins : true, // falls back to "allow all" only if CORS_ORIGIN isn't set — set it in production
+    credentials: true,
+  });
 
-  const document = SwaggerModule.createDocument(app, swaggerConfig); // scans all your controllers/DTOs and generates the spec
-  SwaggerModule.setup('api-docs', app, document); // mounts the interactive UI at http://localhost:3000/api-docs
+  // Swagger docs stay open in dev, but shouldn't be publicly browsable once this is live.
+  if (process.env.NODE_ENV !== 'production') {
+    const swaggerConfig = new DocumentBuilder()
+      .setTitle('LMS API')
+      .setDescription('API documentation for the LMS backend')
+      .setVersion('1.0')
+      .addBearerAuth()
+      .build();
+
+    const document = SwaggerModule.createDocument(app, swaggerConfig);
+    SwaggerModule.setup('api-docs', app, document);
+  }
 
   await app.listen(3000, '0.0.0.0');
 }

@@ -15,6 +15,7 @@ export interface PaymentLineItem {
   quantity?: number;
 }
 
+
 @Injectable()
 export class PaymentsService {
   private razorpay: Razorpay;
@@ -35,6 +36,36 @@ export class PaymentsService {
    * passed in — a single course, or an entire cart. The calling module
    * doesn't need to know this supports multiple items; it just passes a list.
    */
+    /** Used by the webhook handler to look up which Payment a captured event belongs to. */
+  async findByProviderOrderId(providerOrderId: string): Promise<Payment | null> {
+    return this.paymentRepo.findOne({
+      where: { providerOrderId },
+      relations: { items: true },
+    });
+  }
+
+  /** Verifies a Razorpay webhook's signature against the raw request body. */
+  verifyWebhookSignature(rawBody: Buffer, signatureHeader: string): boolean {
+    const expected = crypto
+      .createHmac('sha256', this.config.getOrThrow<string>('RAZORPAY_WEBHOOK_SECRET'))
+      .update(rawBody)
+      .digest('hex');
+    return expected === signatureHeader;
+  }
+
+  /** Idempotent: if this order is already marked PAID (e.g. the client's own
+   *  /verify call already ran, or the webhook fired twice), this is a no-op
+   *  that just returns the existing record instead of re-processing it. */
+  async markPaidFromWebhook(providerOrderId: string, providerPaymentId: string): Promise<Payment | null> {
+    const payment = await this.findByProviderOrderId(providerOrderId);
+    if (!payment) return null;
+    if (payment.status === PaymentStatus.PAID) return payment;
+
+    payment.status = PaymentStatus.PAID;
+    payment.providerPaymentId = providerPaymentId;
+    return this.paymentRepo.save(payment);
+  }
+  
   async createOrderForItems(userId: string, lineItems: PaymentLineItem[], currency: string) {
     const totalAmount = lineItems.reduce((sum, item) => sum + item.amount * (item.quantity ?? 1), 0);
 
@@ -44,6 +75,8 @@ export class PaymentsService {
       receipt: `order_${userId}_${Date.now()}`,
     });
 
+
+    
     const payment = this.paymentRepo.create({
       userId,
       amount: totalAmount,

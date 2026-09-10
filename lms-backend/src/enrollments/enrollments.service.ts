@@ -2,13 +2,14 @@ import {
   Injectable,
   ConflictException,
   NotFoundException,
+  BadRequestException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Enrollment } from './entities/enrollment.entity';
 import { CoursesService } from '../courses/courses.service';
 import { PaymentsService } from 'src/payment/payments.service';
-import { PaymentStatus } from 'src/payment/entities/payment.entity';
+import { Payment, PaymentStatus } from 'src/payment/entities/payment.entity';
 import { CheckoutCartDto } from './dto/checkout-cart.dto';
 import { VerifyPaymentDto } from 'src/payment/dto/verify-payment.dto';
 import { CartService } from 'src/cart/cart.service';
@@ -23,17 +24,6 @@ export class EnrollmentsService {
     private cartService: CartService,
   ) {}
 
-  /**
-   * Starts checkout for one or more courses at once.
-   *
-   * If dto.courseIds is provided, checks out exactly those courses (used
-   * for a direct "Buy now" on a single course page, bypassing the cart).
-   * Otherwise, checks out everything currently saved in the student's
-   * persisted cart.
-   *
-   * Free courses are enrolled immediately.
-   * Paid courses are sent to Razorpay as one payment order.
-   */
   async checkoutCart(studentId: string, dto: CheckoutCartDto) {
     const explicitIds = dto.courseIds && dto.courseIds.length > 0 ? dto.courseIds : null;
     const courseIds = explicitIds ?? (await this.cartService.getCourseIdsForStudent(studentId));
@@ -45,66 +35,32 @@ export class EnrollmentsService {
     const uniqueCourseIds = [...new Set(courseIds)];
 
     const alreadyEnrolled = await this.enrollmentRepo.find({
-      where: uniqueCourseIds.map((courseId) => ({
-        studentId,
-        courseId,
-      })),
+      where: uniqueCourseIds.map((courseId) => ({ studentId, courseId })),
     });
-
-    const alreadyEnrolledIds = new Set(
-      alreadyEnrolled.map((e) => e.courseId),
-    );
-
-    const toProcess = uniqueCourseIds.filter(
-      (id) => !alreadyEnrolledIds.has(id),
-    );
+    const alreadyEnrolledIds = new Set(alreadyEnrolled.map((e) => e.courseId));
+    const toProcess = uniqueCourseIds.filter((id) => !alreadyEnrolledIds.has(id));
 
     if (toProcess.length === 0) {
-      throw new ConflictException(
-        'Already enrolled in all selected courses',
-      );
+      throw new ConflictException('Already enrolled in all selected courses');
     }
 
-    const courses = await Promise.all(
-      toProcess.map((id) => this.coursesService.findOne(id)),
-    );
+    const courses = await Promise.all(toProcess.map((id) => this.coursesService.findOne(id)));
+    const freeCourses = courses.filter((course) => Number(course.price) <= 0);
+    const paidCourses = courses.filter((course) => Number(course.price) > 0);
 
-    const freeCourses = courses.filter(
-      (course) => Number(course.price) <= 0,
-    );
-
-    const paidCourses = courses.filter(
-      (course) => Number(course.price) > 0,
-    );
-
-    // Enroll in free courses immediately
     for (const course of freeCourses) {
-      const enrollment = this.enrollmentRepo.create({
-        studentId,
-        courseId: course.id,
-      });
-
+      const enrollment = this.enrollmentRepo.create({ studentId, courseId: course.id });
       await this.enrollmentRepo.save(enrollment);
     }
 
-    // NEW — a free course is fully processed the moment it's enrolled,
-    // so drop it from the persisted cart right away.
     if (freeCourses.length > 0) {
-      await this.cartService.removeItems(
-        studentId,
-        freeCourses.map((course) => course.id),
-      );
+      await this.cartService.removeItems(studentId, freeCourses.map((course) => course.id));
     }
 
-    // If there are no paid courses, we're done
     if (paidCourses.length === 0) {
-      return {
-        free: true,
-        enrolledCourseIds: freeCourses.map((course) => course.id),
-      };
+      return { free: true, enrolledCourseIds: freeCourses.map((course) => course.id) };
     }
 
-    // Payment items sent to the payment service
     const lineItems = paidCourses.map((course) => ({
       referenceType: 'course_enrollment',
       referenceId: course.id,
@@ -112,15 +68,7 @@ export class EnrollmentsService {
       quantity: 1,
     }));
 
-    // Create one payment order for all paid courses.
-    // NOTE: paid courses stay in the cart until payment is actually
-    // confirmed (see confirmCart below) — if the user abandons Razorpay,
-    // the item should still be sitting in their cart afterward.
-    const order = await this.paymentsService.createOrderForItems(
-      studentId,
-      lineItems,
-      'INR',
-    );
+    const order = await this.paymentsService.createOrderForItems(studentId, lineItems, 'INR');
 
     return {
       free: false,
@@ -129,43 +77,57 @@ export class EnrollmentsService {
     };
   }
 
-  /**
-   * Called after the frontend's Razorpay payment succeeds.
-   *
-   * Verifies the payment, creates one Enrollment for every
-   * course_enrollment item in the payment, and clears those
-   * courses out of the student's persisted cart — this is the
-   * literal "cart converts to order" step.
-   */
-  async confirmCart(
-    studentId: string,
-    dto: VerifyPaymentDto,
-  ) {
-    const payment = await this.paymentsService.verifyAndConfirm(
-      studentId,
-      dto,
-    );
+  /** Called after the frontend's Razorpay payment succeeds. */
+  async confirmCart(studentId: string, dto: VerifyPaymentDto) {
+    const payment = await this.paymentsService.verifyAndConfirm(studentId, dto);
 
     if (payment.status !== PaymentStatus.PAID) {
       throw new NotFoundException('Payment was not completed');
     }
 
-    // Explicitly type this as Enrollment[]
+    return { enrollments: await this.createEnrollmentsFromPayment(studentId, payment) };
+  }
+
+  /**
+   * Called by the Razorpay webhook — the safety net for when the client
+   * never calls /verify (app closed/crashed/network dropped right after
+   * paying). Idempotent: safe to call multiple times for the same payment.
+   */
+  async confirmFromWebhook(providerOrderId: string, providerPaymentId: string) {
+    const payment = await this.paymentsService.findByProviderOrderId(providerOrderId);
+    if (!payment) {
+      throw new NotFoundException(`No payment found for order ${providerOrderId}`);
+    }
+
+    // Already fully processed (either by the client's own /verify call, or
+    // a duplicate webhook delivery) — nothing left to do.
+    const alreadyPaid = payment.status === PaymentStatus.PAID;
+
+    const confirmed = alreadyPaid
+      ? payment
+      : await this.paymentsService.markPaidFromWebhook(providerOrderId, providerPaymentId);
+
+    if (!confirmed) {
+      throw new NotFoundException(`No payment found for order ${providerOrderId}`);
+    }
+
+    return { enrollments: await this.createEnrollmentsFromPayment(confirmed.userId, confirmed) };
+  }
+
+  /** Shared by confirmCart and confirmFromWebhook — creates one Enrollment
+   *  per course_enrollment item in the payment (skipping ones that already
+   *  exist), then drops those courses from the cart. Safe to call twice for
+   *  the same payment — it just returns the existing enrollments. */
+  private async createEnrollmentsFromPayment(studentId: string, payment: Payment) {
     const enrollments: Enrollment[] = [];
-    const paidCourseIds: string[] = []; // NEW
+    const paidCourseIds: string[] = [];
 
     for (const item of payment.items) {
-      if (item.referenceType !== 'course_enrollment') {
-        continue;
-      }
-
-      paidCourseIds.push(item.referenceId); // NEW
+      if (item.referenceType !== 'course_enrollment') continue;
+      paidCourseIds.push(item.referenceId);
 
       const existing = await this.enrollmentRepo.findOne({
-        where: {
-          studentId,
-          courseId: item.referenceId,
-        },
+        where: { studentId, courseId: item.referenceId },
       });
 
       if (existing) {
@@ -173,28 +135,14 @@ export class EnrollmentsService {
         continue;
       }
 
-      const enrollment = this.enrollmentRepo.create({
-        studentId,
-        courseId: item.referenceId,
-      });
-
-      const savedEnrollment =
-        await this.enrollmentRepo.save(enrollment);
-
-      enrollments.push(savedEnrollment);
+      const enrollment = this.enrollmentRepo.create({ studentId, courseId: item.referenceId });
+      enrollments.push(await this.enrollmentRepo.save(enrollment));
     }
 
-    // NEW — payment confirmed, these courses are owned now, not "in cart".
     await this.cartService.removeItems(studentId, paidCourseIds);
-
-    return {
-      enrollments,
-    };
+    return enrollments;
   }
 
-  /**
-   * Returns all enrollments for the logged-in student.
-   */
   findMyEnrollments(studentId: string) {
     return this.enrollmentRepo.find({
       where: { studentId },
@@ -203,20 +151,8 @@ export class EnrollmentsService {
     });
   }
 
-  /**
-   * Checks whether a student is already enrolled in a course.
-   */
-  async isEnrolled(
-    studentId: string,
-    courseId: string,
-  ): Promise<boolean> {
-    const enrollment = await this.enrollmentRepo.findOne({
-      where: {
-        studentId,
-        courseId,
-      },
-    });
-
+  async isEnrolled(studentId: string, courseId: string): Promise<boolean> {
+    const enrollment = await this.enrollmentRepo.findOne({ where: { studentId, courseId } });
     return !!enrollment;
   }
 }
