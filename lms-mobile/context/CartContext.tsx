@@ -1,9 +1,12 @@
-import { createContext, useContext, useEffect, useState } from "react";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import { createContext, useContext } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Course } from "../types/course";
+import { getCart, addCartItem, removeCartItem } from "../lib/api/cart";
+import { useAuth } from "./AuthContext";
 
 interface CartContextValue {
   items: Course[];
+  isLoading: boolean;
   addToCart: (course: Course) => void;
   removeFromCart: (courseId: string) => void;
   clearCart: () => void;
@@ -12,39 +15,69 @@ interface CartContextValue {
 }
 
 const CartContext = createContext<CartContextValue | undefined>(undefined);
-const STORAGE_KEY = "lms_cart";
+const CART_QUERY_KEY = ["cart"];
 
 export function CartProvider({ children }: { children: React.ReactNode }) {
-  const [items, setItems] = useState<Course[]>([]);
-  const [isHydrated, setIsHydrated] = useState(false);
+  const queryClient = useQueryClient();
+  const { isAuthenticated } = useAuth();
 
-  // Load any cart saved from a previous session.
-  useEffect(() => {
-    AsyncStorage.getItem(STORAGE_KEY)
-      .then((stored) => {
-        if (stored) setItems(JSON.parse(stored) as Course[]);
-      })
-      .catch(() => {})
-      .finally(() => setIsHydrated(true));
-  }, []);
+  // Cart lives in the DB now, keyed by the logged-in student — this just
+  // reads/writes it through the API instead of AsyncStorage.
+  const { data: items = [], isLoading } = useQuery({
+    queryKey: CART_QUERY_KEY,
+    queryFn: getCart,
+    enabled: isAuthenticated, // guarded student-only endpoint — don't call it while logged out
+    staleTime: 30_000,
+  });
 
-  // Persist on every change, once the initial load has finished (otherwise
-  // we'd briefly overwrite the saved cart with an empty array on startup).
-  useEffect(() => {
-    if (!isHydrated) return;
-    AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(items)).catch(() => {});
-  }, [items, isHydrated]);
+  const addMutation = useMutation({
+    mutationFn: (course: Course) => addCartItem(course.id),
+    onMutate: async (course) => {
+      await queryClient.cancelQueries({ queryKey: CART_QUERY_KEY });
+      const previous = queryClient.getQueryData<Course[]>(CART_QUERY_KEY) ?? [];
+      if (!previous.some((c) => c.id === course.id)) {
+        queryClient.setQueryData<Course[]>(CART_QUERY_KEY, [...previous, course]);
+      }
+      return { previous };
+    },
+    onError: (_err, _course, context) => {
+      if (context?.previous) queryClient.setQueryData(CART_QUERY_KEY, context.previous);
+    },
+    onSettled: () => queryClient.invalidateQueries({ queryKey: CART_QUERY_KEY }),
+  });
+
+  const removeMutation = useMutation({
+    mutationFn: (courseId: string) => removeCartItem(courseId),
+    onMutate: async (courseId) => {
+      await queryClient.cancelQueries({ queryKey: CART_QUERY_KEY });
+      const previous = queryClient.getQueryData<Course[]>(CART_QUERY_KEY) ?? [];
+      queryClient.setQueryData<Course[]>(
+        CART_QUERY_KEY,
+        previous.filter((c) => c.id !== courseId)
+      );
+      return { previous };
+    },
+    onError: (_err, _courseId, context) => {
+      if (context?.previous) queryClient.setQueryData(CART_QUERY_KEY, context.previous);
+    },
+    onSettled: () => queryClient.invalidateQueries({ queryKey: CART_QUERY_KEY }),
+  });
 
   function addToCart(course: Course) {
-    setItems((prev) => (prev.some((c) => c.id === course.id) ? prev : [...prev, course]));
+    if (!isAuthenticated) return; // safety net — add-to-cart only lives on protected student screens
+    addMutation.mutate(course);
   }
 
   function removeFromCart(courseId: string) {
-    setItems((prev) => prev.filter((c) => c.id !== courseId));
+    removeMutation.mutate(courseId);
   }
 
   function clearCart() {
-    setItems([]);
+    // No server call here on purpose — checkout (free courses) and verify
+    // (paid courses) already delete the matching cart rows server-side once
+    // enrollment succeeds. This just clears the local view instantly instead
+    // of waiting on the next refetch.
+    queryClient.setQueryData<Course[]>(CART_QUERY_KEY, []);
   }
 
   function isInCart(courseId: string) {
@@ -54,7 +87,9 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const total = items.reduce((sum, c) => sum + Number(c.price), 0);
 
   return (
-    <CartContext.Provider value={{ items, addToCart, removeFromCart, clearCart, isInCart, total }}>
+    <CartContext.Provider
+      value={{ items, isLoading, addToCart, removeFromCart, clearCart, isInCart, total }}
+    >
       {children}
     </CartContext.Provider>
   );
