@@ -11,7 +11,6 @@ export interface CreateTeacherInput {
   name: string;
   password: string;
 }
-
 export async function createTeacher(input: CreateTeacherInput): Promise<{ message: string }> {
   const { data } = await apiClient.post<{ message: string }>("/admin/create-teacher", input);
   return data;
