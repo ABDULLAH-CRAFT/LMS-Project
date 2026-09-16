@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, ScrollView, Pressable } from "react-native";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useCart } from "../../context/CartContext";
-import { COLORS } from "../../constants/theme";
+import { COLORS, CARD_SHADOW, PRIMARY_SHADOW } from "../../constants/theme";
 
 export default function Payment() {
   const { items, total } = useCart();
@@ -114,10 +114,11 @@ const styles = StyleSheet.create({
   },
 
   section: {
-    backgroundColor: "#fff",
-    borderRadius: 16,
+    backgroundColor: COLORS.surface,
+    borderRadius: 20,
     padding: 16,
     marginBottom: 16,
+    ...CARD_SHADOW,
   },
 
   sectionTitle: {
@@ -133,7 +134,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     paddingVertical: 14,
     borderBottomWidth: 1,
-    borderBottomColor: "#eee",
+    borderBottomColor: COLORS.border,
   },
 
   courseInfo: {
@@ -155,10 +156,11 @@ const styles = StyleSheet.create({
   },
 
   totalCard: {
-    backgroundColor: "#fff",
-    borderRadius: 16,
+    backgroundColor: COLORS.surface,
+    borderRadius: 20,
     padding: 18,
     marginBottom: 16,
+    ...CARD_SHADOW,
   },
 
   totalRow: {
@@ -180,7 +182,7 @@ const styles = StyleSheet.create({
 
   divider: {
     height: 1,
-    backgroundColor: "#eee",
+    backgroundColor: COLORS.border,
     marginVertical: 14,
   },
 
@@ -199,9 +201,9 @@ const styles = StyleSheet.create({
   infoBox: {
     flexDirection: "row",
     gap: 10,
-    backgroundColor: "#eef4ff",
+    backgroundColor: COLORS.primaryLight,
     padding: 14,
-    borderRadius: 12,
+    borderRadius: 16,
     marginBottom: 20,
   },
 
@@ -215,8 +217,9 @@ const styles = StyleSheet.create({
   checkoutButton: {
     backgroundColor: COLORS.primary,
     paddingVertical: 15,
-    borderRadius: 12,
+    borderRadius: 14,
     alignItems: "center",
+    ...PRIMARY_SHADOW,
   },
 
   checkoutButtonText: {

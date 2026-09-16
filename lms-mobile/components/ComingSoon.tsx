@@ -1,7 +1,7 @@
 import { Text, View, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import ScreenContainer from "./ScreenContainer";
-import { COLORS } from "../constants/theme";
+import { COLORS, CARD_SHADOW } from "../constants/theme";
 
 // Mobile equivalent of the web's ComingSoonPage.tsx — same purpose:
 // a placeholder for tabs whose real feature isn't built yet.
@@ -33,15 +33,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
   },
   iconCircle: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
+    width: 76,
+    height: 76,
+    borderRadius: 38,
     backgroundColor: COLORS.surface,
-    borderWidth: 1,
-    borderColor: COLORS.border,
     alignItems: "center",
     justifyContent: "center",
     marginBottom: 16,
+    ...CARD_SHADOW,
   },
   heading: {
     fontSize: 18,

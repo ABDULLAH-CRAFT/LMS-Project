@@ -10,7 +10,7 @@ import {
   createLesson,
 } from "../../../lib/api/courses";
 import { CourseStatus, LessonContentType } from "../../../types/course";
-import { COLORS } from "../../../constants/theme";
+import { COLORS, CARD_SHADOW, PRIMARY_SHADOW } from "../../../constants/theme";
 
 export default function CourseEditor() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -223,14 +223,15 @@ const styles = StyleSheet.create({
   publishedText: { color: COLORS.success, fontSize: 11, fontWeight: "700" },
   publishButton: {
     backgroundColor: COLORS.primary,
-    borderRadius: 12,
+    borderRadius: 14,
     paddingVertical: 14,
     alignItems: "center",
     marginTop: 16,
+    ...PRIMARY_SHADOW,
   },
   publishButtonText: { color: "#fff", fontWeight: "700" },
   sectionTitle: { fontSize: 17, fontWeight: "700", color: COLORS.text, marginTop: 24, marginBottom: 10 },
-  module: { marginBottom: 18, backgroundColor: COLORS.surface, borderWidth: 1, borderColor: COLORS.border, borderRadius: 12, padding: 14 },
+  module: { marginBottom: 18, backgroundColor: COLORS.surface, borderRadius: 18, padding: 14, ...CARD_SHADOW },
   moduleTitle: { fontSize: 15, fontWeight: "700", color: COLORS.text, marginBottom: 6 },
   lessonRow: { flexDirection: "row", alignItems: "center", gap: 8, paddingVertical: 6, paddingLeft: 8 },
   lessonIcon: { fontSize: 14 },
@@ -239,19 +240,17 @@ const styles = StyleSheet.create({
   lessonForm: { marginTop: 10, gap: 8 },
   moduleForm: { gap: 8, marginTop: 8 },
   input: {
-    backgroundColor: COLORS.surface,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    borderRadius: 10,
+    backgroundColor: COLORS.surfaceStrong,
+    borderRadius: 12,
     paddingHorizontal: 12,
     paddingVertical: 10,
     fontSize: 14,
     color: COLORS.text,
   },
-  smallButton: { backgroundColor: COLORS.primary, borderRadius: 10, paddingVertical: 10, alignItems: "center" },
+  smallButton: { backgroundColor: COLORS.primary, borderRadius: 12, paddingVertical: 10, alignItems: "center" },
   smallButtonText: { color: "#fff", fontWeight: "700", fontSize: 13 },
-  typeChip: { borderWidth: 1, borderColor: COLORS.border, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 6 },
-  typeChipActive: { backgroundColor: COLORS.primary, borderColor: COLORS.primary },
+  typeChip: { backgroundColor: COLORS.surfaceStrong, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 6 },
+  typeChipActive: { backgroundColor: COLORS.primary },
   typeChipText: { fontSize: 13, color: COLORS.text },
   typeChipTextActive: { fontSize: 13, color: "#fff", fontWeight: "700" },
   error: { color: COLORS.danger, fontSize: 14 },

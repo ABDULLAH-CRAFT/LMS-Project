@@ -6,7 +6,7 @@ import ScreenContainer from "../../components/ScreenContainer";
 import { getMyTeacherCourses, createCourse } from "../../lib/api/courses";
 import { CourseStatus } from "../../types/course";
 import { useAuth } from "../../context/AuthContext";
-import { COLORS } from "../../constants/theme";
+import { COLORS, CARD_SHADOW, PRIMARY_SHADOW, SOFT_SHADOW } from "../../constants/theme";
 
 export default function TeacherDashboard() {
   const { user } = useAuth();
@@ -129,22 +129,21 @@ export default function TeacherDashboard() {
 
 const styles = StyleSheet.create({
   row: { flexDirection: "row", gap: 12 },
-  statCard: { flex: 1, borderRadius: 16, padding: 20 },
+  statCard: { flex: 1, borderRadius: 20, padding: 20, ...SOFT_SHADOW },
   statNumber: { fontSize: 28, fontWeight: "800" },
   statLabel: { fontSize: 13, color: COLORS.muted, marginTop: 4 },
   newButton: {
     backgroundColor: COLORS.primary,
-    borderRadius: 12,
+    borderRadius: 14,
     paddingVertical: 14,
     alignItems: "center",
+    ...PRIMARY_SHADOW,
   },
   newButtonText: { color: "#fff", fontWeight: "700" },
-  form: { gap: 10, borderWidth: 1, borderColor: COLORS.border, borderRadius: 14, padding: 14 },
+  form: { gap: 10, backgroundColor: COLORS.surface, borderRadius: 20, padding: 16, ...CARD_SHADOW },
   input: {
-    backgroundColor: COLORS.surface,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    borderRadius: 10,
+    backgroundColor: COLORS.surfaceStrong,
+    borderRadius: 12,
     paddingHorizontal: 14,
     paddingVertical: 12,
     fontSize: 15,

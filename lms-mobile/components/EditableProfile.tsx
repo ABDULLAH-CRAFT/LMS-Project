@@ -4,7 +4,7 @@ import { useRouter } from "expo-router";
 import ScreenContainer from "./ScreenContainer";
 import { useAuth } from "../context/AuthContext";
 import { updateProfile, changePassword } from "../lib/api/users";
-import { COLORS } from "../constants/theme";
+import { COLORS, CARD_SHADOW } from "../constants/theme";
 import { Ionicons } from "@expo/vector-icons"; // add this line
 
 
@@ -174,21 +174,18 @@ export default function EditableProfile() {
 const styles = StyleSheet.create({
   card: {
     backgroundColor: COLORS.surface,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    borderRadius: 14,
+    borderRadius: 20,
     padding: 16,
     gap: 10,
     marginBottom: 16,
+    ...CARD_SHADOW,
   },
   cardTitle: { fontSize: 15, fontWeight: "700", color: COLORS.text },
   cardLabel: { fontSize: 11, color: COLORS.mutedDark, textTransform: "uppercase" },
   readonlyValue: { fontSize: 15, color: COLORS.text },
   input: {
     backgroundColor: COLORS.surfaceStrong,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    borderRadius: 10,
+    borderRadius: 12,
     paddingHorizontal: 14,
     paddingVertical: 12,
     fontSize: 15,
@@ -196,7 +193,7 @@ const styles = StyleSheet.create({
   },
   button: {
     backgroundColor: COLORS.primary,
-    borderRadius: 10,
+    borderRadius: 12,
     paddingVertical: 12,
     alignItems: "center",
   },
@@ -206,7 +203,7 @@ const styles = StyleSheet.create({
   error: { color: COLORS.danger, fontSize: 12 },
   logoutButton: {
     backgroundColor: COLORS.danger,
-    borderRadius: 12,
+    borderRadius: 14,
     paddingVertical: 14,
     alignItems: "center",
     marginTop: 4,

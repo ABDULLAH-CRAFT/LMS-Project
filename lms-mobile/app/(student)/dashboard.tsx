@@ -4,7 +4,7 @@ import { useRouter } from "expo-router";
 import ScreenContainer from "../../components/ScreenContainer";
 import { getMyEnrollments } from "../../lib/api/courses";
 import { useAuth } from "../../context/AuthContext";
-import { COLORS } from "../../constants/theme";
+import { COLORS, SOFT_SHADOW, PRIMARY_SHADOW } from "../../constants/theme";
 
 export default function StudentDashboard() {
   const { user } = useAuth();
@@ -19,16 +19,18 @@ export default function StudentDashboard() {
     <ScreenContainer title={`Hi, ${user?.name?.split(" ")[0] ?? "there"} 👋`}>
       <ScrollView
         contentContainerStyle={{ gap: 16 }}
+        showsVerticalScrollIndicator={false}
         refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor={COLORS.primary} />}
       >
-        <View style={styles.row}>
-          <View style={styles.statCard}>
-            <Text style={styles.statNumber}>{isLoading ? "—" : enrollments?.length ?? 0}</Text>
-            <Text style={styles.statLabel}>Enrolled Courses</Text>
-          </View>
+        <Text style={styles.greetingSub}>Ready to achieve your daily targets?</Text>
+
+        <View style={styles.heroCard}>
+          <Text style={styles.heroLabel}>Enrolled Courses</Text>
+          <Text style={styles.heroNumber}>{isLoading ? "—" : enrollments?.length ?? 0}</Text>
+          <Text style={styles.heroHint}>Keep the momentum going — open a course below to continue.</Text>
         </View>
 
-        {isLoading && <ActivityIndicator color={COLORS.primary} style={{ marginTop: 20 }} />}
+        {isLoading && <ActivityIndicator color={COLORS.primary} style={{ marginTop: 4 }} />}
         {isError && <Text style={styles.error}>Couldn't load your dashboard. Pull down to retry.</Text>}
 
         <Text style={styles.sectionTitle}>Continue Learning</Text>
@@ -37,7 +39,7 @@ export default function StudentDashboard() {
         )}
         {enrollments?.slice(0, 3).map((enrollment) => (
           <View key={enrollment.id} style={styles.courseRow}>
-            <Text style={styles.courseTitle}>{enrollment.course.title}</Text>
+            <Text style={styles.courseTitle} numberOfLines={1}>{enrollment.course.title}</Text>
             <Text
               style={styles.link}
               onPress={() => router.push(`/(student)/course/${enrollment.course.id}`)}
@@ -52,29 +54,28 @@ export default function StudentDashboard() {
 }
 
 const styles = StyleSheet.create({
-  row: { flexDirection: "row", gap: 12 },
-  statCard: {
-    flex: 1,
-    borderRadius: 16,
-    padding: 20,
-    backgroundColor: COLORS.surface,
-    borderWidth: 1,
-    borderColor: COLORS.border,
+  greetingSub: { fontSize: 13, color: COLORS.muted, marginTop: -8 },
+  heroCard: {
+    borderRadius: 24,
+    padding: 22,
+    backgroundColor: COLORS.primary,
+    ...PRIMARY_SHADOW,
   },
-  statNumber: { fontSize: 28, fontWeight: "800", color: COLORS.primary },
-  statLabel: { fontSize: 13, color: COLORS.muted, marginTop: 4 },
+  heroLabel: { fontSize: 12, fontWeight: "700", color: COLORS.primaryLight, textTransform: "uppercase", letterSpacing: 0.6 },
+  heroNumber: { fontSize: 40, fontWeight: "800", color: "#fff", marginTop: 6, letterSpacing: -1 },
+  heroHint: { fontSize: 13, color: COLORS.primaryLight, marginTop: 8, lineHeight: 18 },
   sectionTitle: { fontSize: 16, fontWeight: "700", color: COLORS.text, marginTop: 8 },
   empty: { color: COLORS.muted, fontSize: 14 },
   courseRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    borderRadius: 12,
-    padding: 14,
+    backgroundColor: COLORS.surface,
+    borderRadius: 16,
+    padding: 16,
+    ...SOFT_SHADOW,
   },
-  courseTitle: { fontSize: 15, fontWeight: "600", color: COLORS.text, flex: 1 },
+  courseTitle: { fontSize: 15, fontWeight: "700", color: COLORS.text, flex: 1, marginRight: 12 },
   link: { color: COLORS.primary, fontWeight: "700" },
   error: { color: COLORS.danger, fontSize: 13 },
 });

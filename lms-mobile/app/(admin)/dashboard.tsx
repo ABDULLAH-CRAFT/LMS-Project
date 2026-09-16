@@ -5,7 +5,7 @@ import ScreenContainer from "../../components/ScreenContainer";
 import { listTeachers } from "../../lib/api/admin";
 import { getPublishedCourses } from "../../lib/api/courses";
 import { useAuth } from "../../context/AuthContext";
-import { COLORS } from "../../constants/theme";
+import { COLORS, SOFT_SHADOW } from "../../constants/theme";
 
 export default function AdminDashboard() {
   const { user } = useAuth();
@@ -56,7 +56,7 @@ export default function AdminDashboard() {
 
 const styles = StyleSheet.create({
   row: { flexDirection: "row", gap: 12 },
-  statCard: { flex: 1, borderRadius: 16, padding: 20, borderWidth: 1, borderColor: COLORS.border },
+  statCard: { flex: 1, borderRadius: 20, padding: 20, ...SOFT_SHADOW },
   statNumber: { fontSize: 28, fontWeight: "800" },
   statLabel: { fontSize: 13, color: COLORS.muted, marginTop: 4 },
   sectionTitle: { fontSize: 16, fontWeight: "700", color: COLORS.text, marginTop: 8 },

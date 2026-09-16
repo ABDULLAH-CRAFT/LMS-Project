@@ -2,7 +2,7 @@ import { FlatList, Text, View, StyleSheet, Pressable } from "react-native";
 import { useRouter } from "expo-router";
 import ScreenContainer from "../../components/ScreenContainer";
 import { useCart } from "../../context/CartContext";
-import { COLORS } from "../../constants/theme";
+import { COLORS, CARD_SHADOW, PRIMARY_SHADOW } from "../../constants/theme";
 
 export default function Cart() {
   const { items, removeFromCart, total } = useCart();
@@ -68,25 +68,23 @@ export default function Cart() {
 const styles = StyleSheet.create({
   emptyBox: {
     backgroundColor: COLORS.surface,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    borderRadius: 16,
+    borderRadius: 20,
     padding: 40,
     alignItems: "center",
     marginTop: 30,
+    ...CARD_SHADOW,
   },
   emptyText: { color: COLORS.muted, marginBottom: 16 },
   list: { flex: 1 },
-  browseButton: { backgroundColor: COLORS.primary, borderRadius: 999, paddingHorizontal: 20, paddingVertical: 12 },
+  browseButton: { backgroundColor: COLORS.primary, borderRadius: 999, paddingHorizontal: 20, paddingVertical: 12, ...PRIMARY_SHADOW },
   browseButtonText: { color: "#fff", fontWeight: "700", fontSize: 13 },
   row: {
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: COLORS.surface,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    borderRadius: 14,
+    borderRadius: 16,
     padding: 14,
+    ...CARD_SHADOW,
   },
   itemTitle: { color: COLORS.text, fontWeight: "700", fontSize: 14 },
   itemMeta: { color: COLORS.mutedDark, fontSize: 11, marginTop: 2 },
@@ -94,11 +92,10 @@ const styles = StyleSheet.create({
   removeText: { color: COLORS.danger, fontSize: 11, marginTop: 4 },
   summary: {
     backgroundColor: COLORS.surface,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    borderRadius: 16,
+    borderRadius: 20,
     padding: 18,
     marginTop: 16,
+    ...CARD_SHADOW,
   },
   summaryRow: { flexDirection: "row", justifyContent: "space-between" },
   summaryLabel: { color: COLORS.muted, fontSize: 13 },
@@ -112,6 +109,7 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     alignItems: "center",
     marginTop: 18,
+    ...PRIMARY_SHADOW,
   },
   checkoutButtonText: { color: "#fff", fontWeight: "700", fontSize: 14 },
   secureNote: { color: COLORS.mutedDark, fontSize: 11, textAlign: "center", marginTop: 10 },

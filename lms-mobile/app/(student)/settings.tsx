@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, Switch, ActivityIndicator } f
 import { useRouter } from "expo-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import ScreenContainer from "../../components/ScreenContainer";
-import { COLORS } from "../../constants/theme";
+import { COLORS, CARD_SHADOW } from "../../constants/theme";
 import { useAuth } from "../../context/AuthContext";
 import {
   getNotificationSettings,
@@ -87,8 +87,8 @@ export default function Settings() {
             <Switch
               value={settings[item.key]}
               onValueChange={() => toggle(item.key)}
-              trackColor={{ false: COLORS.surface, true: COLORS.primaryStrong }}
-              thumbColor={COLORS.text}
+              trackColor={{ false: COLORS.surfaceStrong, true: COLORS.primaryStrong }}
+              thumbColor={COLORS.white}
             />
           </View>
         ))}
@@ -107,7 +107,7 @@ export default function Settings() {
 
 const styles = StyleSheet.create({
   subtitle: { color: COLORS.mutedDark, marginBottom: 20, fontSize: 13 },
-  card: { backgroundColor: COLORS.surface, borderWidth: 1, borderColor: COLORS.border, borderRadius: 16, padding: 18, marginBottom: 16 },
+  card: { backgroundColor: COLORS.surface, borderRadius: 20, padding: 18, marginBottom: 16, ...CARD_SHADOW },
   cardHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 8 },
   cardTitle: { color: COLORS.text, fontWeight: "600", fontSize: 15 },
   saved: { color: COLORS.success, fontSize: 12 },
@@ -116,8 +116,8 @@ const styles = StyleSheet.create({
   rowText: { flex: 1, paddingRight: 12 },
   rowLabel: { color: COLORS.text, fontSize: 14 },
   rowDescription: { color: COLORS.mutedDark, fontSize: 12, marginTop: 2 },
-  dangerCard: { borderColor: "rgba(248,113,113,0.2)" },
+  dangerCard: {},
   dangerHint: { color: COLORS.mutedDark, fontSize: 12, marginBottom: 14 },
-  logoutBtn: { alignSelf: "flex-start", borderWidth: 1, borderColor: "rgba(248,113,113,0.3)", borderRadius: 10, paddingVertical: 8, paddingHorizontal: 16 },
+  logoutBtn: { alignSelf: "flex-start", backgroundColor: COLORS.dangerBg, borderRadius: 12, paddingVertical: 9, paddingHorizontal: 16 },
   logoutText: { color: COLORS.danger, fontSize: 13, fontWeight: "500" },
 });

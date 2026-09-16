@@ -3,7 +3,7 @@ import { useLocalSearchParams, Stack } from "expo-router";
 import { useQuery } from "@tanstack/react-query";
 import { getCourseById, getCurriculum, checkEnrollment } from "../../../lib/api/courses";
 import { useCart } from "@/context/CartContext";
-import { COLORS } from "../../../constants/theme";
+import { COLORS, CARD_SHADOW, PRIMARY_SHADOW } from "../../../constants/theme";
 
 export default function CourseDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -109,15 +109,16 @@ const styles = StyleSheet.create({
   price: { fontSize: 18, fontWeight: "700", color: COLORS.primary, marginTop: 8 },
   enrollButton: {
     backgroundColor: COLORS.primary,
-    borderRadius: 12,
+    borderRadius: 14,
     paddingVertical: 14,
     alignItems: "center",
     marginTop: 16,
+    ...PRIMARY_SHADOW,
   },
   enrollText: { color: "#fff", fontWeight: "700" },
   sectionTitle: { fontSize: 17, fontWeight: "700", color: COLORS.text, marginBottom: 10 },
   empty: { color: COLORS.muted, fontSize: 14 },
-  module: { marginBottom: 16 },
+  module: { marginBottom: 16, backgroundColor: COLORS.surface, borderRadius: 16, padding: 14, ...CARD_SHADOW },
   moduleTitle: { fontSize: 15, fontWeight: "700", color: COLORS.text, marginBottom: 6 },
   lessonRow: { flexDirection: "row", alignItems: "center", gap: 8, paddingVertical: 6, paddingLeft: 8 },
   lessonIcon: { fontSize: 14 },

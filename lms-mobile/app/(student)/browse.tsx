@@ -7,7 +7,7 @@ import ScreenContainer from "../../components/ScreenContainer";
 import { getPublishedCourses } from "../../lib/api/courses";
 import { useCart } from "../../context/CartContext";
 import { useDebouncedValue } from "@/hooks/useDebounceValue";
-import { COLORS } from "../../constants/theme";
+import { COLORS, SOFT_SHADOW, CARD_SHADOW } from "../../constants/theme";
 
 export default function Browse() {
   const router = useRouter();
@@ -100,35 +100,31 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
-    backgroundColor: COLORS.surface,
-    borderWidth: 1,
-    borderColor: COLORS.border,
+    backgroundColor: COLORS.surfaceStrong,
     borderRadius: 999,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
     marginBottom: 14,
   },
   searchInput: { flex: 1, color: COLORS.text, fontSize: 14, padding: 0 },
   list: { flex: 1 },
   card: {
     backgroundColor: COLORS.surface,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    borderRadius: 14,
+    borderRadius: 18,
     padding: 16,
     gap: 8,
+    ...CARD_SHADOW,
   },
   title: { fontSize: 16, fontWeight: "700", color: COLORS.text },
   desc: { fontSize: 13, color: COLORS.muted },
   footer: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: 4 },
   price: { fontSize: 14, fontWeight: "700", color: COLORS.primary },
   cartButton: {
-    borderWidth: 1,
-    borderColor: COLORS.border,
     backgroundColor: COLORS.surfaceStrong,
     borderRadius: 999,
     paddingHorizontal: 14,
     paddingVertical: 8,
+    ...SOFT_SHADOW,
   },
   cartButtonDisabled: { opacity: 0.5 },
   cartButtonText: { color: COLORS.text, fontSize: 12, fontWeight: "600" },

@@ -1,6 +1,6 @@
 import { Tabs } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { ROLE_ACCENTS } from "../../constants/theme";
+import { ROLE_ACCENTS, COLORS, SOFT_SHADOW } from "../../constants/theme";
 
 export default function TeacherLayout() {
   return (
@@ -8,7 +8,16 @@ export default function TeacherLayout() {
       screenOptions={{
         headerShown: false,
         tabBarActiveTintColor: ROLE_ACCENTS.teacher,
-        tabBarInactiveTintColor: "#9ca3af",
+        tabBarInactiveTintColor: COLORS.mutedDark,
+        tabBarStyle: {
+          backgroundColor: COLORS.background,
+          borderTopWidth: 0,
+          height: 78,
+          paddingTop: 8,
+          paddingBottom: 18,
+          ...SOFT_SHADOW,
+        },
+        tabBarLabelStyle: { fontSize: 11, fontWeight: "600" },
       }}
     >
       <Tabs.Screen

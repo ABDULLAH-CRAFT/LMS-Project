@@ -4,7 +4,7 @@ import { useRouter } from "expo-router";
 import ScreenContainer from "../../components/ScreenContainer";
 import { getMyTeacherCourses } from "../../lib/api/courses";
 import { CourseStatus } from "../../types/course";
-import { COLORS } from "../../constants/theme";
+import { COLORS, CARD_SHADOW } from "../../constants/theme";
 
 export default function Published() {
   const router = useRouter();
@@ -60,11 +60,10 @@ const styles = StyleSheet.create({
   list: { flex: 1 },
   card: {
     backgroundColor: COLORS.surface,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    borderRadius: 14,
+    borderRadius: 18,
     padding: 16,
     gap: 6,
+    ...CARD_SHADOW,
   },
   title: { fontSize: 16, fontWeight: "700", color: COLORS.text },
   desc: { fontSize: 13, color: COLORS.muted },

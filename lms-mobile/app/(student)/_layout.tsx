@@ -1,6 +1,6 @@
 import { Tabs } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { ROLE_ACCENTS, COLORS } from "../../constants/theme";
+import { ROLE_ACCENTS, COLORS, SOFT_SHADOW } from "../../constants/theme";
 import { useCart } from "../../context/CartContext";
 
 export default function StudentLayout() {
@@ -11,16 +11,25 @@ export default function StudentLayout() {
       screenOptions={{
         headerShown: false,
         tabBarActiveTintColor: ROLE_ACCENTS.student,
-        tabBarInactiveTintColor: "#9ca3af",
+        tabBarInactiveTintColor: COLORS.mutedDark,
+        tabBarStyle: {
+          backgroundColor: COLORS.background,
+          borderTopWidth: 0,
+          height: 78,
+          paddingTop: 8,
+          paddingBottom: 18,
+          ...SOFT_SHADOW,
+        },
+        tabBarLabelStyle: { fontSize: 11, fontWeight: "600" },
       }}
     >
       <Tabs.Screen
         name="dashboard"
-        options={{ title: "Dashboard", tabBarIcon: ({ color, size }) => <Ionicons name="home" color={color} size={size} /> }}
+        options={{ title: "Home", tabBarIcon: ({ color, size }) => <Ionicons name="home" color={color} size={size} /> }}
       />
       <Tabs.Screen
         name="my-courses"
-        options={{ title: "My Courses", tabBarIcon: ({ color, size }) => <Ionicons name="book" color={color} size={size} /> }}
+        options={{ title: "Courses", tabBarIcon: ({ color, size }) => <Ionicons name="book" color={color} size={size} /> }}
       />
       <Tabs.Screen
         name="browse"
@@ -32,7 +41,7 @@ export default function StudentLayout() {
           title: "Cart",
           tabBarIcon: ({ color, size }) => <Ionicons name="cart" color={color} size={size} />,
           tabBarBadge: items.length > 0 ? items.length : undefined,
-          tabBarBadgeStyle: { backgroundColor: COLORS.primary, fontSize: 10 },
+          tabBarBadgeStyle: { backgroundColor: COLORS.danger, fontSize: 10 },
         }}
       />
       <Tabs.Screen

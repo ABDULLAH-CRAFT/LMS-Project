@@ -1,48 +1,85 @@
-// Design tokens — kept in sync with the web app's look:
-// near-black background, glass (translucent white) cards, purple→cyan as the
-// one accent gradient used everywhere (buttons, links, active states).
-// See lms-frontend/src/pages/Landing.tsx and DashboardLayout.tsx for source of truth.
+// Design tokens — "Lumina Learn" soft-UI (neumorphic) theme.
+// Light, airy background with soft dual-tone shadows for a tactile, extruded
+// look. Ported from the web reference (indigo primary, teal secondary,
+// amber/orange tertiary) — see the Lumina Learn dashboard mockup for source of truth.
 
 export const COLORS = {
-  background: "#030308", // matches web's bg-[#030308]
-  surface: "rgba(255,255,255,0.04)", // glass card fill, matches bg-white/[0.04]
-  surfaceStrong: "rgba(255,255,255,0.07)", // slightly more opaque, for hovered/pressed or nested cards
-  border: "rgba(255,255,255,0.1)", // matches border-white/10
-  borderStrong: "rgba(255,255,255,0.18)",
+  background: "#eef3fa", // page background (canvas-bg)
+  surface: "#ffffff", // raised card fill (surface-container-lowest)
+  surfaceStrong: "#e8eef6", // recessed / secondary fill, inputs, chips (surface-container)
+  surfaceHigh: "#e3e9f1", // surface-container-high, for nested/hover cards
+  border: "#e2e8f2", // hairline, barely-there — cards lean on shadow, not borders
+  borderStrong: "#c7c4d8", // outline-variant, for dividers that need to read a bit more
 
-  text: "#ffffff",
-  muted: "#9ca3af", // gray-400 — body copy on dark bg
-  mutedDark: "#6b7280", // gray-500 — deeper muted, matches web's text-gray-500
-  placeholder: "#6b7280",
+  text: "#1e293b", // text-primary / on-surface
+  muted: "#64748b", // text-muted
+  mutedDark: "#475569", // text-secondary
+  placeholder: "#94a3b8",
 
-  primary: "#a855f7", // purple-500 — main interactive accent (matches web's border/bg-purple-500)
-  primaryStrong: "#9333ea", // purple-600 — gradient start / solid buttons
-  secondary: "#22d3ee", // cyan-400 — gradient end / secondary accent
+  primary: "#3525cd", // primary — main interactive accent (indigo)
+  primaryStrong: "#4f46e5", // primary-container — gradient / solid CTA fill
+  primaryLight: "#e2dfff", // primary-fixed — tinted backgrounds behind primary content
+  primarySoft: "#c3c0ff", // primary-fixed-dim — subtle accents on primary surfaces
 
-  danger: "#f87171", // red-400
-  dangerBg: "rgba(248,113,113,0.12)",
-  success: "#34d399", // emerald-400
-  successBg: "rgba(52,211,153,0.12)",
-  warning: "#fbbf24", // amber-400
-  warningBg: "rgba(251,191,36,0.12)",
+  secondary: "#006c4a", // secondary (teal green) — success / positive accent
+  secondaryLight: "#82f5c1", // secondary-fixed — success chip backgrounds
+
+  tertiary: "#934e00", // tertiary-container text (amber/orange) — warning accent
+  tertiaryLight: "#ffdcc3", // tertiary-fixed — warning chip backgrounds
+  tertiaryStrong: "#ffb77d", // tertiary-fixed-dim
+
+  danger: "#ba1a1a", // error
+  dangerBg: "#ffdad6", // error-container
+  success: "#006c4a", // alias of secondary, kept for existing call sites
+  successBg: "#c3f7de", // soft mint chip background
+  warning: "#934e00", // alias of tertiary, kept for existing call sites
+  warningBg: "#ffdcc3",
+
+  white: "#ffffff",
 };
 
-// Purple → cyan family, matching the web app's hero/card gradients
-// (from-purple-600 to-cyan-400, from-purple-400 via-blue-400 to-cyan-300, etc).
-// Kept as several stops so course cards don't all look identical, but every
-// pair stays in the same purple/cyan family the web app uses.
+// Soft-UI shadow presets. React Native only casts a single directional shadow
+// (no true dual-tone inset/outset like CSS), so these approximate the
+// "extruded" neu-flat card look with one soft, diffused dark shadow.
+// Spread one of these into a card style alongside a light/white background.
+export const CARD_SHADOW = {
+  shadowColor: "#a3b1c6",
+  shadowOffset: { width: 0, height: 6 },
+  shadowOpacity: 0.25,
+  shadowRadius: 12,
+  elevation: 4,
+};
+
+export const SOFT_SHADOW = {
+  shadowColor: "#a3b1c6",
+  shadowOffset: { width: 0, height: 3 },
+  shadowOpacity: 0.18,
+  shadowRadius: 6,
+  elevation: 2,
+};
+
+export const PRIMARY_SHADOW = {
+  shadowColor: "#3525cd",
+  shadowOffset: { width: 0, height: 8 },
+  shadowOpacity: 0.3,
+  shadowRadius: 14,
+  elevation: 6,
+};
+
+// Indigo/violet family for the hero card, plus teal + amber stops (matching
+// the secondary/tertiary accents) so course cards aren't all identical.
 export const GRADIENTS: [string, string][] = [
-  ["#9333ea", "#22d3ee"], // purple-600 -> cyan-400 (primary, matches web CTA buttons)
-  ["#a855f7", "#38bdf8"], // purple-500 -> sky-400
-  ["#c084fc", "#22d3ee"], // purple-400 -> cyan-400
-  ["#7e22ce", "#0891b2"], // purple-700 -> cyan-600
-  ["#8b5cf6", "#06b6d4"], // violet-500 -> cyan-500
-  ["#d946ef", "#22d3ee"], // fuchsia-500 -> cyan-400
+  ["#4437e6", "#3020bf"], // primary hero gradient
+  ["#4f46e5", "#3525cd"],
+  ["#00916a", "#006c4a"], // secondary / teal
+  ["#ff8a3d", "#934e00"], // tertiary / amber
+  ["#6366f1", "#4438ca"],
+  ["#00b884", "#00714e"],
 ];
 
-// The web app doesn't color-code roles — student/teacher/admin dashboards all
-// use the same purple accent. Kept as an export (rather than deleting it and
-// touching every tab layout) so all three tab bars stay visually consistent.
+// The design doesn't color-code roles — student/teacher/admin dashboards all
+// use the same indigo accent. Kept as an export so all three tab bars stay
+// visually consistent.
 export const ROLE_ACCENTS = {
   student: COLORS.primary,
   teacher: COLORS.primary,

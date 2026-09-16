@@ -12,7 +12,7 @@ import {
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import ScreenContainer from "../../components/ScreenContainer";
 import { listTeachers, createTeacher } from "../../lib/api/admin";
-import { COLORS } from "../../constants/theme";
+import { COLORS, CARD_SHADOW, PRIMARY_SHADOW } from "../../constants/theme";
 
 export default function Teachers() {
   const queryClient = useQueryClient();
@@ -140,14 +140,12 @@ export default function Teachers() {
 
 const styles = StyleSheet.create({
   list: { flex: 1 },
-  newButton: { backgroundColor: COLORS.primary, borderRadius: 12, paddingVertical: 14, alignItems: "center" },
+  newButton: { backgroundColor: COLORS.primary, borderRadius: 14, paddingVertical: 14, alignItems: "center", ...PRIMARY_SHADOW },
   newButtonText: { color: "#fff", fontWeight: "700" },
-  form: { gap: 10, borderWidth: 1, borderColor: COLORS.border, borderRadius: 14, padding: 14 },
+  form: { gap: 10, backgroundColor: COLORS.surface, borderRadius: 20, padding: 16, ...CARD_SHADOW },
   input: {
-    backgroundColor: COLORS.surface,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    borderRadius: 10,
+    backgroundColor: COLORS.surfaceStrong,
+    borderRadius: 12,
     paddingHorizontal: 14,
     paddingVertical: 12,
     fontSize: 15,
@@ -155,11 +153,10 @@ const styles = StyleSheet.create({
   },
   card: {
     backgroundColor: COLORS.surface,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    borderRadius: 14,
+    borderRadius: 18,
     padding: 16,
     gap: 4,
+    ...CARD_SHADOW,
   },
   teacherName: { fontSize: 16, fontWeight: "700", color: COLORS.text },
   teacherEmail: { fontSize: 13, color: COLORS.muted },

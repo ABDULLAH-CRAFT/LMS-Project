@@ -4,7 +4,7 @@ import { useRouter } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
 import ScreenContainer from "../../components/ScreenContainer";
 import { getMyEnrollments } from "../../lib/api/courses";
-import { GRADIENTS, COLORS } from "../../constants/theme";
+import { GRADIENTS, COLORS, CARD_SHADOW } from "../../constants/theme";
 
 export default function MyCourses() {
   const router = useRouter();
@@ -70,7 +70,7 @@ export default function MyCourses() {
 
 const styles = StyleSheet.create({
   list: { flex: 1 },
-  card: { borderRadius: 18, padding: 20, gap: 6 },
+  card: { borderRadius: 22, padding: 20, gap: 6, ...CARD_SHADOW },
   cardTitle: { color: "#fff", fontSize: 17, fontWeight: "800" },
   cardMeta: { color: "rgba(255,255,255,0.85)", fontSize: 12 },
   cardLink: { color: "#fff", fontWeight: "700", marginTop: 8 },
