@@ -1,27 +1,17 @@
 import { useState } from 'react'; // form state
-import { useMutation, useQueryClient } from '@tanstack/react-query'; // update mutations + cache invalidation
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'; // queries + mutations + cache invalidation
 import { api } from '../lib/axios'; // shared axios instance
 import { useCurrentUser } from '../hooks/useCurrentUser'; // real logged-in user data
 import DashboardLayout from './DashboardLayout'; // sidebar + navbar shell
 import type { SidebarSection } from './Sidebar'; // type for the sidebar prop
+import type { LearningStats } from '../types/progress'; // shape of GET /progress/me/stats
 
 interface ProfilePageProps {
   sidebarSections: SidebarSection[]; // passed in by StudentProfile or TeacherProfile — the ONLY thing that differs between them
 }
 
-// Mock gamification stats — there's no streak/XP/level/hours-learned data in
-// the backend yet, so these are placeholders to match the target design.
-// Swap these for real query data once that feature exists.
-const MOCK_STATS = {
-  streakDays: 5,
-  totalXp: 4850,
-  level: 5,
-  levelTitle: 'Senior Token Crafter',
-  currentLevelXp: 4250,
-  nextLevelXp: 5000,
-  hoursLearned: 84.5,
-  coursesCompleted: 8,
-};
+// Simple flavor titles by level — purely cosmetic, not derived from any real data.
+const LEVEL_TITLES = ['Newcomer', 'Learner', 'Achiever', 'Scholar', 'Expert', 'Master'];
 
 export default function ProfilePage({ sidebarSections }: ProfilePageProps) {
   const queryClient = useQueryClient();
@@ -40,7 +30,18 @@ export default function ProfilePage({ sidebarSections }: ProfilePageProps) {
   const [nameMessage, setNameMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null); // feedback for the name form
   const [passwordMessage, setPasswordMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null); // feedback for the password form
 
-  const levelPercent = Math.round((MOCK_STATS.currentLevelXp / MOCK_STATS.nextLevelXp) * 100);
+  // Real learning stats — replaces the old MOCK_STATS placeholder now that /progress exists
+  const statsQuery = useQuery({
+    queryKey: ['learning-stats'],
+    queryFn: async () => {
+      const response = await api.get<LearningStats>('/progress/me/stats');
+      return response.data;
+    },
+  });
+  const stats = statsQuery.data;
+
+  const levelTitle = LEVEL_TITLES[Math.min((stats?.level ?? 1) - 1, LEVEL_TITLES.length - 1)];
+  const levelPercent = stats ? Math.round((stats.currentLevelXp / stats.nextLevelXp) * 100) : 0;
 
   const updateNameMutation = useMutation({
     mutationFn: async () => {
@@ -191,39 +192,39 @@ export default function ProfilePage({ sidebarSections }: ProfilePageProps) {
 
           {/* Right column: streak/XP + level progress, stacked, taking the remaining 2/3 width */}
           <div className="lg:col-span-2 flex flex-col gap-6">
-            {/* ===== Stats: streak + XP (mock data) ===== */}
+            {/* ===== Stats: streak, XP, lessons completed, courses completed (real data) ===== */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
               <div className="bg-surface rounded-2xl shadow-soft p-5 flex flex-col items-start gap-2">
                 <div className="w-9 h-9 rounded-full bg-tertiary-100 flex items-center justify-center text-lg">🔥</div>
-                <span className="text-lg font-extrabold text-text">{MOCK_STATS.streakDays} Days</span>
+                <span className="text-lg font-extrabold text-text">{stats?.streakDays ?? 0} Days</span>
                 <span className="text-xs text-muted-dark">Active Streak</span>
               </div>
               <div className="bg-surface rounded-2xl shadow-soft p-5 flex flex-col items-start gap-2">
                 <div className="w-9 h-9 rounded-full bg-primary-100 flex items-center justify-center text-lg">⭐</div>
-                <span className="text-lg font-extrabold text-text">{MOCK_STATS.totalXp.toLocaleString()}</span>
+                <span className="text-lg font-extrabold text-text">{(stats?.xp ?? 0).toLocaleString()}</span>
                 <span className="text-xs text-muted-dark">Total XP</span>
               </div>
               <div className="bg-surface rounded-2xl shadow-soft p-5 flex flex-col items-start gap-2">
-                <div className="w-9 h-9 rounded-full bg-surface-strong flex items-center justify-center text-lg">⏱️</div>
-                <span className="text-lg font-extrabold text-text">{MOCK_STATS.hoursLearned} hrs</span>
-                <span className="text-xs text-muted-dark">Total Hours Learned</span>
+                <div className="w-9 h-9 rounded-full bg-surface-strong flex items-center justify-center text-lg">📘</div>
+                <span className="text-lg font-extrabold text-text">{stats?.lessonsCompleted ?? 0}</span>
+                <span className="text-xs text-muted-dark">Lessons Completed</span>
               </div>
               <div className="bg-surface rounded-2xl shadow-soft p-5 flex flex-col items-start gap-2">
                 <div className="w-9 h-9 rounded-full bg-secondary-100 flex items-center justify-center text-lg">✅</div>
-                <span className="text-lg font-extrabold text-text">{MOCK_STATS.coursesCompleted}</span>
+                <span className="text-lg font-extrabold text-text">{stats?.coursesCompleted ?? 0}</span>
                 <span className="text-xs text-muted-dark">Courses Completed</span>
               </div>
             </div>
 
-            {/* ===== Level progress (mock data) ===== */}
+            {/* ===== Level progress (real data, derived from XP) ===== */}
             <div className="bg-surface rounded-2xl shadow-soft p-5">
               <div className="flex items-center flex-wrap gap-2 mb-3">
                 <span className="bg-primary-100 text-primary-700 text-[11px] font-extrabold px-2.5 py-1 rounded-full">
-                  LVL {MOCK_STATS.level}
+                  LVL {stats?.level ?? 1}
                 </span>
-                <span className="flex-1 text-sm font-bold text-text">{MOCK_STATS.levelTitle}</span>
+                <span className="flex-1 text-sm font-bold text-text">{levelTitle}</span>
                 <span className="text-xs text-muted-dark font-semibold">
-                  {levelPercent}% to Lvl {MOCK_STATS.level + 1}
+                  {levelPercent}% to Lvl {(stats?.level ?? 1) + 1}
                 </span>
               </div>
               <div className="h-2 rounded-full bg-surface-strong overflow-hidden">
@@ -233,8 +234,8 @@ export default function ProfilePage({ sidebarSections }: ProfilePageProps) {
                 />
               </div>
               <div className="flex justify-between text-[11px] text-muted-dark mt-2">
-                <span>{MOCK_STATS.currentLevelXp.toLocaleString()} XP</span>
-                <span>{MOCK_STATS.nextLevelXp.toLocaleString()} XP (Target)</span>
+                <span>{(stats?.currentLevelXp ?? 0).toLocaleString()} XP</span>
+                <span>{(stats?.nextLevelXp ?? 500).toLocaleString()} XP (Target)</span>
               </div>
             </div>
           </div>

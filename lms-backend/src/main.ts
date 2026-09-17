@@ -1,25 +1,30 @@
 import { NestFactory } from '@nestjs/core';
+import { NestExpressApplication } from '@nestjs/platform-express';
 import { ValidationPipe } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import helmet from 'helmet';
+import { join } from 'path';
+import * as fs from 'fs';
 import { AppModule } from './app.module';
 import { AllExceptionsFilter } from './common/filters/http-exception.filter';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule, { rawBody: true }); // rawBody needed for verifying the Razorpay webhook signature
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, { rawBody: true }); // NestExpressApplication needed for useStaticAssets below
+
+  fs.mkdirSync(join(__dirname, '..', 'uploads', 'videos'), { recursive: true }); // multer's diskStorage needs this folder to already exist
 
   app.use(helmet());
+  app.useStaticAssets(join(__dirname, '..', 'uploads'), { prefix: '/uploads/' }); // serves http://localhost:3000/uploads/videos/xyz.mp4
 
   app.useGlobalPipes(new ValidationPipe({ whitelist: true }));
   app.useGlobalFilters(new AllExceptionsFilter());
 
   const allowedOrigins = (process.env.CORS_ORIGIN ?? '').split(',').filter(Boolean);
   app.enableCors({
-    origin: allowedOrigins.length > 0 ? allowedOrigins : true, // falls back to "allow all" only if CORS_ORIGIN isn't set — set it in production
+    origin: allowedOrigins.length > 0 ? allowedOrigins : true,
     credentials: true,
   });
 
-  // Swagger docs stay open in dev, but shouldn't be publicly browsable once this is live.
   if (process.env.NODE_ENV !== 'production') {
     const swaggerConfig = new DocumentBuilder()
       .setTitle('LMS API')

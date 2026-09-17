@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '../lib/axios';
 import type { Enrollment } from '../types/enrollment';
@@ -8,6 +8,8 @@ import CourseGridSkeleton from '../components/CourseGridSkeleton';
 import { studentSidebarSections } from '../config/studentSidebar';
 
 export default function StudentMyCourses() {
+  const navigate = useNavigate();
+
   const enrollmentsQuery = useQuery({
     queryKey: ['my-enrollments'],
     queryFn: async () => {
@@ -18,15 +20,15 @@ export default function StudentMyCourses() {
 
   return (
     <DashboardLayout sidebarSections={studentSidebarSections}>
-      <h1 className="text-3xl font-bold text-text mb-1">My Courses</h1> {/* CHANGED — white heading */}
+      <h1 className="text-3xl font-bold text-text mb-1">My Courses</h1>
       <p className="text-muted mb-8">Courses you're currently enrolled in.</p>
 
       {enrollmentsQuery.isLoading && <CourseGridSkeleton />}
 
       {!enrollmentsQuery.isLoading && enrollmentsQuery.data?.length === 0 && (
         <div className="text-center py-20">
-          <p className="text-text font-medium mb-1">You haven't enrolled in any courses yet</p> {/* CHANGED — white text */}
-          <Link to="/student" className="text-sm text-primary-600 font-medium hover:text-primary-700"> {/* CHANGED — purple link matching theme */}
+          <p className="text-text font-medium mb-1">You haven't enrolled in any courses yet</p>
+          <Link to="/student" className="text-sm text-primary-600 font-medium hover:text-primary-700">
             Browse the catalog →
           </Link>
         </div>
@@ -40,7 +42,20 @@ export default function StudentMyCourses() {
               course={enrollment.course}
               index={index}
               footer={
-                <p className="text-xs text-muted">Enrolled {new Date(enrollment.enrolledAt).toLocaleDateString()}</p> // CHANGED — muted gray
+                <div className="flex items-center justify-between">
+                  <p className="text-xs text-muted">Enrolled {new Date(enrollment.enrolledAt).toLocaleDateString()}</p>
+                  {/* NEW — nested button (not a Link) so we don't nest an <a> inside CourseCard's outer <Link> */}
+                  <button
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      navigate(`/student/courses/${enrollment.course.id}/learn`);
+                    }}
+                    className="text-xs font-semibold text-primary-600 hover:text-primary-700 transition"
+                  >
+                    Continue learning →
+                  </button>
+                </div>
               }
             />
           ))}

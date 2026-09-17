@@ -19,7 +19,7 @@ import StudentAssignments from './pages/StudentAssignments';
 import StudentMessages from './pages/StudentMessages';
 import StudentSettings from './pages/StudentSettings';
 import Cart from './pages/Cart';
-
+import StudentCourseLearn from './pages/StudentCourseLearn'; // NEW — add alongside the other page imports
 const queryClient = new QueryClient();
 
 export default function App() {
@@ -89,6 +89,15 @@ export default function App() {
               element={
                 <ProtectedRoute allowedRoles={['student']}>
                   <StudentDashboard />
+                </ProtectedRoute>
+              }
+            />
+            {/* NEW — add this Route inside <Routes>, near the other /student/... routes */}
+            <Route
+              path="/student/courses/:id/learn"
+              element={
+                <ProtectedRoute allowedRoles={['student']}>
+                  <StudentCourseLearn />
                 </ProtectedRoute>
               }
             />
