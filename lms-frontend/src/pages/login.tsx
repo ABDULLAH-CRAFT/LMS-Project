@@ -90,23 +90,23 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#050505] text-white overflow-hidden relative flex items-center justify-center px-6 py-10">
+    <div className="min-h-screen bg-background text-text overflow-hidden relative flex items-center justify-center px-6 py-10">
       {/* =====================================================
           BACKGROUND
       ====================================================== */}
 
       <div className="fixed inset-0 -z-10 overflow-hidden">
         {/* Purple Glow */}
-        <div className="absolute -top-40 -left-40 w-[500px] h-[500px] rounded-full bg-purple-600/20 blur-[130px]" />
+        <div className="absolute -top-40 -left-40 w-[500px] h-[500px] rounded-full bg-primary-600/20 blur-[130px]" />
 
         {/* Cyan Glow */}
-        <div className="absolute -bottom-40 -right-40 w-[500px] h-[500px] rounded-full bg-cyan-500/15 blur-[130px]" />
+        <div className="absolute -bottom-40 -right-40 w-[500px] h-[500px] rounded-full bg-secondary-500/15 blur-[130px]" />
 
         {/* Center Glow */}
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] rounded-full bg-blue-600/10 blur-[130px]" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] rounded-full bg-primary-600/10 blur-[130px]" />
 
         {/* Grid */}
-        <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.025)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.025)_1px,transparent_1px)] bg-[size:60px_60px]" />
+        <div className="absolute inset-0 bg-[linear-gradient(rgba(30,41,59,0.035)_1px,transparent_1px),linear-gradient(90deg,rgba(30,41,59,0.035)_1px,transparent_1px)] bg-[size:60px_60px]" />
       </div>
 
       {/* =====================================================
@@ -126,20 +126,20 @@ export default function LoginPage() {
             to="/"
             className="inline-flex items-center gap-3 mb-14 group"
           >
-            <div className="w-11 h-11 rounded-xl bg-white text-black flex items-center justify-center font-black text-lg group-hover:rotate-6 transition-transform">
+            <div className="w-11 h-11 rounded-xl bg-primary-600 text-white flex items-center justify-center font-black text-lg group-hover:rotate-6 transition-transform">
               L
             </div>
 
             <span className="text-xl font-bold">
-              LMS<span className="text-purple-400">.</span>
+              LMS<span className="text-primary-600">.</span>
             </span>
           </Link>
 
           {/* Main Text */}
           <div className="max-w-xl">
 
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-white/10 bg-white/5 text-sm text-gray-400 mb-7">
-              <span className="w-2 h-2 rounded-full bg-purple-400 shadow-[0_0_12px_rgba(168,85,247,0.9)]" />
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-border bg-surface text-sm text-muted mb-7">
+              <span className="w-2 h-2 rounded-full bg-primary-600 shadow-[0_0_12px_rgba(53,37,205,0.5)]" />
 
               Welcome back
             </div>
@@ -148,12 +148,12 @@ export default function LoginPage() {
               Continue your
               <br />
 
-              <span className="bg-gradient-to-r from-purple-400 via-pink-400 to-cyan-400 bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-primary-600 via-tertiary-500 to-secondary-600 bg-clip-text text-transparent">
                 learning journey.
               </span>
             </h1>
 
-            <p className="text-lg text-gray-500 leading-relaxed mt-7 max-w-lg">
+            <p className="text-lg text-muted leading-relaxed mt-7 max-w-lg">
               Your courses, progress and achievements are waiting
               for you. Sign in and continue exactly where you left off.
             </p>
@@ -162,7 +162,7 @@ export default function LoginPage() {
             <div className="mt-10 space-y-4">
 
               <div className="flex items-center gap-4">
-                <div className="w-10 h-10 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center">
+                <div className="w-10 h-10 rounded-xl bg-primary-500/10 border border-primary-500/20 flex items-center justify-center">
                   ✓
                 </div>
 
@@ -171,14 +171,14 @@ export default function LoginPage() {
                     Pick up where you left off
                   </p>
 
-                  <p className="text-sm text-gray-600">
+                  <p className="text-sm text-muted">
                     Your learning progress stays saved.
                   </p>
                 </div>
               </div>
 
               <div className="flex items-center gap-4">
-                <div className="w-10 h-10 rounded-xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center">
+                <div className="w-10 h-10 rounded-xl bg-secondary-500/10 border border-secondary-500/20 flex items-center justify-center">
                   ⚡
                 </div>
 
@@ -187,14 +187,14 @@ export default function LoginPage() {
                     Learn at your own pace
                   </p>
 
-                  <p className="text-sm text-gray-600">
+                  <p className="text-sm text-muted">
                     Access your courses whenever you want.
                   </p>
                 </div>
               </div>
 
               <div className="flex items-center gap-4">
-                <div className="w-10 h-10 rounded-xl bg-pink-500/10 border border-pink-500/20 flex items-center justify-center">
+                <div className="w-10 h-10 rounded-xl bg-tertiary-500/10 border border-tertiary-500/20 flex items-center justify-center">
                   🏆
                 </div>
 
@@ -203,7 +203,7 @@ export default function LoginPage() {
                     Build your future
                   </p>
 
-                  <p className="text-sm text-gray-600">
+                  <p className="text-sm text-muted">
                     Track your achievements as you learn.
                   </p>
                 </div>
@@ -225,12 +225,12 @@ export default function LoginPage() {
               to="/"
               className="flex items-center gap-3"
             >
-              <div className="w-11 h-11 rounded-xl bg-white text-black flex items-center justify-center font-black text-lg">
+              <div className="w-11 h-11 rounded-xl bg-primary-600 text-white flex items-center justify-center font-black text-lg">
                 L
               </div>
 
               <span className="text-xl font-bold">
-                LMS<span className="text-purple-400">.</span>
+                LMS<span className="text-primary-600">.</span>
               </span>
             </Link>
           </div>
@@ -239,14 +239,14 @@ export default function LoginPage() {
           <div className="relative">
 
             {/* Glow behind card */}
-            <div className="absolute inset-0 bg-purple-500/10 blur-[80px] rounded-full" />
+            <div className="absolute inset-0 bg-primary-500/10 blur-[80px] rounded-full" />
 
-            <div className="relative rounded-[2rem] border border-white/10 bg-white/[0.045] backdrop-blur-2xl p-7 sm:p-9 shadow-2xl shadow-black/40">
+            <div className="relative rounded-[2rem] border border-border bg-surface p-7 sm:p-9 shadow-soft-lg">
 
               {/* Card Header */}
               <div className="mb-8">
 
-                <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-purple-500/20 to-cyan-500/20 border border-white/10 flex items-center justify-center text-xl mb-6">
+                <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary-500/20 to-secondary-500/20 border border-border flex items-center justify-center text-xl mb-6">
                   🔐
                 </div>
 
@@ -254,7 +254,7 @@ export default function LoginPage() {
                   Sign in
                 </h2>
 
-                <p className="text-sm text-gray-500 mt-2">
+                <p className="text-sm text-muted mt-2">
                   Welcome back. Enter your details to continue.
                 </p>
               </div>
@@ -267,12 +267,12 @@ export default function LoginPage() {
 
                 {/* Email */}
                 <div>
-                  <label className="block text-xs font-medium text-gray-400 mb-2">
+                  <label className="block text-xs font-medium text-muted mb-2">
                     Email address
                   </label>
 
                   <div className="relative">
-                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-600">
+                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted">
                       @
                     </span>
 
@@ -293,16 +293,16 @@ export default function LoginPage() {
                           });
                         }
                       }}
-                      className={`w-full bg-white/[0.04] border ${
+                      className={`w-full bg-surface-strong border ${
                         errors.email
-                          ? 'border-red-500/50'
-                          : 'border-white/10'
-                      } rounded-xl pl-11 pr-4 py-3.5 text-sm text-white placeholder:text-gray-700 outline-none transition focus:border-purple-500/60 focus:bg-white/[0.06] focus:ring-4 focus:ring-purple-500/10`}
+                          ? 'border-danger-500/50'
+                          : 'border-border'
+                      } rounded-xl pl-11 pr-4 py-3.5 text-sm text-text placeholder:text-placeholder outline-none transition focus:border-primary-500/60 focus:bg-surface-high focus:ring-4 focus:ring-primary-500/10`}
                     />
                   </div>
 
                   {errors.email && (
-                    <p className="text-red-400 text-xs mt-2 px-1">
+                    <p className="text-danger-600 text-xs mt-2 px-1">
                       {errors.email}
                     </p>
                   )}
@@ -310,12 +310,12 @@ export default function LoginPage() {
 
                 {/* Password */}
                 <div>
-                  <label className="block text-xs font-medium text-gray-400 mb-2">
+                  <label className="block text-xs font-medium text-muted mb-2">
                     Password
                   </label>
 
                   <div className="relative">
-                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-600">
+                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted">
                       •
                     </span>
 
@@ -336,16 +336,16 @@ export default function LoginPage() {
                           });
                         }
                       }}
-                      className={`w-full bg-white/[0.04] border ${
+                      className={`w-full bg-surface-strong border ${
                         errors.password
-                          ? 'border-red-500/50'
-                          : 'border-white/10'
-                      } rounded-xl pl-11 pr-4 py-3.5 text-sm text-white placeholder:text-gray-700 outline-none transition focus:border-purple-500/60 focus:bg-white/[0.06] focus:ring-4 focus:ring-purple-500/10`}
+                          ? 'border-danger-500/50'
+                          : 'border-border'
+                      } rounded-xl pl-11 pr-4 py-3.5 text-sm text-text placeholder:text-placeholder outline-none transition focus:border-primary-500/60 focus:bg-surface-high focus:ring-4 focus:ring-primary-500/10`}
                     />
                   </div>
 
                   {errors.password && (
-                    <p className="text-red-400 text-xs mt-2 px-1">
+                    <p className="text-danger-600 text-xs mt-2 px-1">
                       {errors.password}
                     </p>
                   )}
@@ -361,17 +361,17 @@ export default function LoginPage() {
                       onChange={(e) =>
                         setRememberMe(e.target.checked)
                       }
-                      className="w-4 h-4 rounded border-white/10 bg-white/5 accent-purple-500"
+                      className="w-4 h-4 rounded border-border bg-surface accent-primary-500"
                     />
 
-                    <span className="text-xs text-gray-500 group-hover:text-gray-300 transition">
+                    <span className="text-xs text-muted group-hover:text-muted-dark transition">
                       Remember me
                     </span>
                   </label>
 
                   <Link
                     to="/forgot-password"
-                    className="text-xs text-purple-400 hover:text-purple-300 transition"
+                    className="text-xs text-primary-600 hover:text-primary-700 transition"
                   >
                     Forgot password?
                   </Link>
@@ -382,7 +382,7 @@ export default function LoginPage() {
                 <button
                   type="submit"
                   disabled={loginMutation.isPending}
-                  className="group relative w-full overflow-hidden rounded-xl bg-white text-black py-3.5 text-sm font-semibold transition hover:scale-[1.01] disabled:opacity-50 disabled:hover:scale-100"
+                  className="group relative w-full overflow-hidden rounded-xl bg-primary-600 text-white py-3.5 text-sm font-semibold transition hover:scale-[1.01] disabled:opacity-50 disabled:hover:scale-100"
                 >
                   <span className="relative z-10 flex items-center justify-center gap-2">
                     {loginMutation.isPending
@@ -396,26 +396,26 @@ export default function LoginPage() {
                     )}
                   </span>
 
-                  <div className="absolute inset-0 bg-gradient-to-r from-purple-300 to-cyan-300 opacity-0 group-hover:opacity-100 transition" />
+                  <div className="absolute inset-0 bg-gradient-to-r from-primary-500 to-secondary-500 opacity-0 group-hover:opacity-100 transition" />
                 </button>
 
               </form>
 
               {/* Divider */}
               <div className="flex items-center gap-4 my-7">
-                <div className="h-px bg-white/10 flex-1" />
+                <div className="h-px bg-surface-strong flex-1" />
 
-                <span className="text-[10px] uppercase tracking-widest text-gray-700">
+                <span className="text-[10px] uppercase tracking-widest text-muted-dark">
                   New here?
                 </span>
 
-                <div className="h-px bg-white/10 flex-1" />
+                <div className="h-px bg-surface-strong flex-1" />
               </div>
 
               {/* Register */}
               <Link
                 to="/register"
-                className="flex items-center justify-center w-full rounded-xl border border-white/10 bg-white/[0.02] py-3.5 text-sm font-medium text-gray-300 hover:bg-white/[0.06] hover:text-white transition"
+                className="flex items-center justify-center w-full rounded-xl border border-border bg-surface py-3.5 text-sm font-medium text-muted-dark hover:bg-surface-high hover:text-text transition"
               >
                 Create an account
               </Link>
@@ -424,7 +424,7 @@ export default function LoginPage() {
           </div>
 
           {/* Footer */}
-          <p className="text-center text-xs text-gray-700 mt-6">
+          <p className="text-center text-xs text-muted-dark mt-6">
             By continuing, you agree to our terms and privacy policy.
           </p>
 

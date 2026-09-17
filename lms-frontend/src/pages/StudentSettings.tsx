@@ -44,14 +44,14 @@ export default function StudentSettings() {
 
   return (
     <DashboardLayout sidebarSections={studentSidebarSections}>
-      <h1 className="text-3xl font-bold text-white mb-1">Settings</h1> {/* page heading */}
-      <p className="text-gray-500 mb-8">Manage your notification preferences and account.</p>
+      <h1 className="text-3xl font-bold text-text mb-1">Settings</h1> {/* page heading */}
+      <p className="text-muted mb-8">Manage your notification preferences and account.</p>
 
       {/* NOTIFICATIONS */}
-      <div className="bg-white/[0.03] border border-white/10 rounded-2xl backdrop-blur-xl p-6 mb-6 max-w-lg"> {/* glass card */}
+      <div className="bg-surface rounded-2xl shadow-soft p-6 mb-6 max-w-lg"> {/* glass card */}
         <div className="flex items-center justify-between mb-4"> {/* header row with the "Saved" confirmation */}
-          <h2 className="font-medium text-white">Notifications</h2>
-          {saved && <span className="text-xs text-green-400">Saved</span>} {/* brief confirmation, fades via the timeout above */}
+          <h2 className="font-medium text-text">Notifications</h2>
+          {saved && <span className="text-xs text-secondary-600">Saved</span>} {/* brief confirmation, fades via the timeout above */}
         </div>
 
         {[ // array-driven so adding a new toggle later is one line, not copy-pasted markup
@@ -59,15 +59,15 @@ export default function StudentSettings() {
           { key: 'enrollmentConfirmations' as const, label: 'Enrollment confirmations', description: 'Email confirmation when you enroll in a course' },
           { key: 'marketingEmails' as const, label: 'Marketing emails', description: 'Occasional updates about new features and courses' },
         ].map((item) => (
-          <div key={item.key} className="flex items-center justify-between py-3 border-b border-white/5 last:border-b-0"> {/* last:border-b-0 removes the divider after the final row */}
+          <div key={item.key} className="flex items-center justify-between py-3 border-b border-border last:border-b-0"> {/* last:border-b-0 removes the divider after the final row */}
             <div>
-              <p className="text-sm text-white">{item.label}</p>
-              <p className="text-xs text-gray-500">{item.description}</p>
+              <p className="text-sm text-text">{item.label}</p>
+              <p className="text-xs text-muted">{item.description}</p>
             </div>
             <button
               onClick={() => toggle(item.key)} // flips this specific setting
               className={`relative w-11 h-6 rounded-full transition-colors shrink-0 ${
-                settings[item.key] ? 'bg-gradient-to-r from-purple-600 to-cyan-400' : 'bg-white/10' // gradient when on, dim when off — matches theme
+                settings[item.key] ? 'bg-gradient-to-r from-primary-600 to-secondary-400' : 'bg-surface-strong' // gradient when on, dim when off — matches theme
               }`}
             >
               <span
@@ -81,12 +81,12 @@ export default function StudentSettings() {
       </div>
 
       {/* ACCOUNT / DANGER ZONE */}
-      <div className="bg-white/[0.03] border border-red-500/20 rounded-2xl backdrop-blur-xl p-6 max-w-lg"> {/* red-tinted border signals this is a caution zone */}
-        <h2 className="font-medium text-white mb-1">Account</h2>
-        <p className="text-xs text-gray-500 mb-4">Manage your session on this device.</p>
+      <div className="bg-surface border border-danger-500/20 rounded-2xl shadow-soft p-6 max-w-lg"> {/* red-tinted border signals this is a caution zone */}
+        <h2 className="font-medium text-text mb-1">Account</h2>
+        <p className="text-xs text-muted mb-4">Manage your session on this device.</p>
         <button
           onClick={handleLogoutEverywhere}
-          className="text-sm text-red-400 border border-red-500/30 px-4 py-2 rounded-lg hover:bg-red-500/10 transition"
+          className="text-sm text-danger-600 border border-danger-500/30 px-4 py-2 rounded-lg hover:bg-danger-500/10 transition"
         >
           Log out
         </button>

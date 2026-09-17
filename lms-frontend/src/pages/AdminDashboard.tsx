@@ -47,18 +47,18 @@ export default function AdminDashboard() {
 
   return (
     <DashboardLayout sidebarSections={adminSidebarSections}>
-      <h1 className="text-3xl font-bold text-white mb-1">Manage Teachers</h1> {/* CHANGED — white heading */}
-      <p className="text-gray-500 mb-8">Create teacher accounts and see everyone with teaching access.</p>
+      <h1 className="text-3xl font-bold text-text mb-1">Manage Teachers</h1> {/* CHANGED — white heading */}
+      <p className="text-muted mb-8">Create teacher accounts and see everyone with teaching access.</p>
 
-      <form onSubmit={handleSubmit} className="bg-white/[0.03] border border-white/10 rounded-2xl p-6 backdrop-blur-xl mb-8 max-w-lg"> {/* CHANGED — glass form */}
-        <h2 className="font-medium text-white mb-4">Add a new teacher</h2> {/* CHANGED — white */}
+      <form onSubmit={handleSubmit} className="bg-surface rounded-2xl p-6 shadow-soft mb-8 max-w-lg"> {/* CHANGED — glass form */}
+        <h2 className="font-medium text-text mb-4">Add a new teacher</h2> {/* CHANGED — white */}
 
         <input
           type="text"
           placeholder="Full name"
           value={formData.name}
           onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-          className="w-full bg-white/[0.04] border border-white/10 rounded-lg px-4 py-2 text-sm text-white placeholder:text-gray-600 outline-none focus:border-purple-500/50 focus:ring-4 focus:ring-purple-500/10 transition mb-3" // CHANGED — glass input
+          className="w-full bg-surface-strong border border-border rounded-lg px-4 py-2 text-sm text-text placeholder:text-placeholder outline-none focus:border-primary-500/50 focus:ring-4 focus:ring-primary-500/10 transition mb-3" // CHANGED — glass input
         />
 
         <input
@@ -66,7 +66,7 @@ export default function AdminDashboard() {
           placeholder="Email"
           value={formData.email}
           onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-          className="w-full bg-white/[0.04] border border-white/10 rounded-lg px-4 py-2 text-sm text-white placeholder:text-gray-600 outline-none focus:border-purple-500/50 focus:ring-4 focus:ring-purple-500/10 transition mb-3"
+          className="w-full bg-surface-strong border border-border rounded-lg px-4 py-2 text-sm text-text placeholder:text-placeholder outline-none focus:border-primary-500/50 focus:ring-4 focus:ring-primary-500/10 transition mb-3"
         />
 
         <input
@@ -74,40 +74,40 @@ export default function AdminDashboard() {
           placeholder="Temporary password"
           value={formData.password}
           onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-          className="w-full bg-white/[0.04] border border-white/10 rounded-lg px-4 py-2 text-sm text-white placeholder:text-gray-600 outline-none focus:border-purple-500/50 focus:ring-4 focus:ring-purple-500/10 transition mb-1"
+          className="w-full bg-surface-strong border border-border rounded-lg px-4 py-2 text-sm text-text placeholder:text-placeholder outline-none focus:border-primary-500/50 focus:ring-4 focus:ring-primary-500/10 transition mb-1"
         />
-        <p className="text-xs text-gray-600 mb-3">This will be emailed to the teacher — at least 6 characters.</p> {/* CHANGED — muted hint */}
+        <p className="text-xs text-muted mb-3">This will be emailed to the teacher — at least 6 characters.</p> {/* CHANGED — muted hint */}
 
-        {errorMessage && <p className="text-red-400 text-xs mb-3">{errorMessage}</p>} {/* CHANGED — lighter red */}
+        {errorMessage && <p className="text-danger-600 text-xs mb-3">{errorMessage}</p>} {/* CHANGED — lighter red */}
 
         <button
           type="submit"
           disabled={createTeacherMutation.isPending}
-          className="w-full bg-gradient-to-r from-purple-600 to-cyan-400 text-white rounded-lg py-2 text-sm font-semibold hover:scale-[1.01] transition disabled:opacity-50" // CHANGED — gradient button
+          className="w-full bg-gradient-to-r from-primary-600 to-secondary-400 text-white rounded-lg py-2 text-sm font-semibold hover:scale-[1.01] transition disabled:opacity-50" // CHANGED — gradient button
         >
           {createTeacherMutation.isPending ? 'Creating...' : 'Create Teacher'}
         </button>
       </form>
 
       <div className="max-w-lg">
-        <h2 className="font-medium text-white mb-3">All Teachers</h2> {/* CHANGED — white */}
+        <h2 className="font-medium text-text mb-3">All Teachers</h2> {/* CHANGED — white */}
 
-        {teachersQuery.isLoading && <p className="text-sm text-gray-500">Loading...</p>}
+        {teachersQuery.isLoading && <p className="text-sm text-muted">Loading...</p>}
 
         {teachersQuery.data?.map((teacher) => (
-          <div key={teacher.id} className="bg-white/[0.03] border border-white/10 rounded-xl p-4 backdrop-blur-xl mb-3 flex items-center justify-between"> {/* CHANGED — glass row */}
+          <div key={teacher.id} className="bg-surface rounded-xl p-4 shadow-soft mb-3 flex items-center justify-between"> {/* CHANGED — glass row */}
             <div>
-              <p className="font-medium text-white">{teacher.name}</p> {/* CHANGED — white name */}
-              <p className="text-xs text-gray-500">{teacher.email}</p>
+              <p className="font-medium text-text">{teacher.name}</p> {/* CHANGED — white name */}
+              <p className="text-xs text-muted">{teacher.email}</p>
             </div>
-            <span className="text-xs text-gray-600"> {/* CHANGED — muted date */}
+            <span className="text-xs text-muted"> {/* CHANGED — muted date */}
               Joined {new Date(teacher.createdAt).toLocaleDateString()}
             </span>
           </div>
         ))}
 
         {teachersQuery.data?.length === 0 && (
-          <p className="text-sm text-gray-500">No teachers yet — add one above.</p>
+          <p className="text-sm text-muted">No teachers yet — add one above.</p>
         )}
       </div>
     </DashboardLayout>

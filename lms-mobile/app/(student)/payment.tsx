@@ -307,7 +307,7 @@ export default function Payment() {
               <Text style={styles.appleText}>Apple Pay</Text>
 
               <Ionicons
-                name="arrow-up-right"
+                name="arrow-up-right-box"
                 size={15}
                 color="rgba(255,255,255,0.55)"
               />
@@ -330,7 +330,7 @@ export default function Payment() {
               <Text style={styles.googleText}>G Pay</Text>
 
               <Ionicons
-                name="arrow-up-right"
+                name="arrow-up-right-box"
                 size={15}
                 color={COLORS.muted}
               />

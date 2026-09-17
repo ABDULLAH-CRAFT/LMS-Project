@@ -56,7 +56,7 @@ export default function TeacherDashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-8"> {/* page wrapper */}
+    <div className="min-h-screen bg-background p-8"> {/* page wrapper */}
       <h1 className="text-2xl font-semibold mb-6">My Courses</h1> {/* page heading */}
 
       {/* CREATE COURSE FORM */}
@@ -70,7 +70,7 @@ export default function TeacherDashboard() {
           onChange={(e) => setFormData({ ...formData, title: e.target.value })} // update just the title field, keep others unchanged
           className="w-full border rounded-lg px-4 py-2 text-sm mb-1"
         />
-        {errors.title && <p className="text-red-500 text-xs mb-2">{errors.title}</p>}
+        {errors.title && <p className="text-danger-500 text-xs mb-2">{errors.title}</p>}
 
         <textarea
           placeholder="Description"
@@ -79,7 +79,7 @@ export default function TeacherDashboard() {
           className="w-full border rounded-lg px-4 py-2 text-sm mb-1 mt-2" // textarea instead of input — descriptions are longer
           rows={3} // controls the visible height
         />
-        {errors.description && <p className="text-red-500 text-xs mb-2">{errors.description}</p>}
+        {errors.description && <p className="text-danger-500 text-xs mb-2">{errors.description}</p>}
 
         <input
             type="number"
@@ -94,12 +94,12 @@ export default function TeacherDashboard() {
             className="w-full border rounded-lg px-4 py-2 text-sm mb-1 mt-2"
             step="0.01"
           />
-        {errors.price && <p className="text-red-500 text-xs mb-2">{errors.price}</p>}
+        {errors.price && <p className="text-danger-500 text-xs mb-2">{errors.price}</p>}
 
         <button
           type="submit"
           disabled={createMutation.isPending} // prevents double-submitting while the request is in flight
-          className="w-full bg-black text-white rounded-lg py-2 text-sm font-medium mt-3 disabled:opacity-50"
+          className="w-full bg-primary-600 hover:bg-primary-700 text-white rounded-lg py-2 text-sm font-medium mt-3 disabled:opacity-50"
         >
           {createMutation.isPending ? 'Creating...' : 'Create Course'}
         </button>
@@ -107,15 +107,15 @@ export default function TeacherDashboard() {
 
       {/* COURSE LIST */}
       <div className="max-w-lg"> {/* wrapper for the list below the form */}
-        {coursesQuery.isLoading && <p className="text-sm text-gray-500">Loading your courses...</p>} {/* shown while the initial fetch is in progress */}
+        {coursesQuery.isLoading && <p className="text-sm text-muted">Loading your courses...</p>} {/* shown while the initial fetch is in progress */}
 
         {coursesQuery.data?.map((course) => ( // render one card per course once data has loaded
           <div key={course.id} className="bg-white rounded-xl p-4 shadow-sm mb-3 flex items-center justify-between"> {/* key is required by React for list rendering */}
             <div>
               <h3 className="font-medium">{course.title}</h3>
-              <p className="text-xs text-gray-500">
+              <p className="text-xs text-muted">
                 {course.price} RS · {/* middle dot separator, just styling */}
-                <span className={course.status === 'published' ? 'text-green-600' : 'text-amber-600'}> {/* green if live, amber if still a draft */}
+                <span className={course.status === 'published' ? 'text-secondary-600' : 'text-tertiary-600'}> {/* green if live, amber if still a draft */}
                   {' '}{course.status}
                 </span>
               </p>
@@ -125,7 +125,7 @@ export default function TeacherDashboard() {
               <button
                 onClick={() => publishMutation.mutate(course.id)} // triggers the publish request for THIS specific course
                 disabled={publishMutation.isPending}
-                className="text-xs bg-black text-white px-3 py-1.5 rounded-full disabled:opacity-50"
+                className="text-xs bg-primary-600 hover:bg-primary-700 text-white px-3 py-1.5 rounded-full disabled:opacity-50"
               >
                 Publish
               </button>
@@ -134,7 +134,7 @@ export default function TeacherDashboard() {
         ))}
 
         {coursesQuery.data?.length === 0 && ( // shown only once loading is done AND there are genuinely no courses yet
-          <p className="text-sm text-gray-500">You haven't created any courses yet.</p>
+          <p className="text-sm text-muted">You haven't created any courses yet.</p>
         )}
       </div>
     </div>

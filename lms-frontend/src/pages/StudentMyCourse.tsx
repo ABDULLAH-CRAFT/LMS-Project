@@ -18,15 +18,15 @@ export default function StudentMyCourses() {
 
   return (
     <DashboardLayout sidebarSections={studentSidebarSections}>
-      <h1 className="text-3xl font-bold text-white mb-1">My Courses</h1> {/* CHANGED — white heading */}
-      <p className="text-gray-500 mb-8">Courses you're currently enrolled in.</p>
+      <h1 className="text-3xl font-bold text-text mb-1">My Courses</h1> {/* CHANGED — white heading */}
+      <p className="text-muted mb-8">Courses you're currently enrolled in.</p>
 
       {enrollmentsQuery.isLoading && <CourseGridSkeleton />}
 
       {!enrollmentsQuery.isLoading && enrollmentsQuery.data?.length === 0 && (
         <div className="text-center py-20">
-          <p className="text-white font-medium mb-1">You haven't enrolled in any courses yet</p> {/* CHANGED — white text */}
-          <Link to="/student" className="text-sm text-purple-400 font-medium hover:text-purple-300"> {/* CHANGED — purple link matching theme */}
+          <p className="text-text font-medium mb-1">You haven't enrolled in any courses yet</p> {/* CHANGED — white text */}
+          <Link to="/student" className="text-sm text-primary-600 font-medium hover:text-primary-700"> {/* CHANGED — purple link matching theme */}
             Browse the catalog →
           </Link>
         </div>
@@ -40,7 +40,7 @@ export default function StudentMyCourses() {
               course={enrollment.course}
               index={index}
               footer={
-                <p className="text-xs text-gray-500">Enrolled {new Date(enrollment.enrolledAt).toLocaleDateString()}</p> // CHANGED — muted gray
+                <p className="text-xs text-muted">Enrolled {new Date(enrollment.enrolledAt).toLocaleDateString()}</p> // CHANGED — muted gray
               }
             />
           ))}
