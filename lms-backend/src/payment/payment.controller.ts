@@ -63,6 +63,71 @@ export class PaymentController {
     res.send(html);
   }
 
+  // Hit by a plain top-level browser navigation from inside the checkout
+  // page above — NOT by the app directly. Mobile browsers/WebViews
+  // routinely block a script (`window.location.href = 'lmsmobile://...'`)
+  // from jumping straight to a custom URL scheme; that's what was
+  // causing the redirect back to the app to silently fail and leave the
+  // checkout page looking like it "reopened". A normal https URL
+  // redirecting on to the custom scheme via a real HTTP 302, though, is
+  // the exact pattern in-app browsers (ASWebAuthenticationSession /
+  // Custom Tabs) are built to intercept, so we do the scheme jump here
+  // instead of in the page's own script.
+  //
+  // It also finalizes the enrollment server-side before bouncing back,
+  // so paying goes through even if the app crashes or loses connection
+  // right after — see PaymentsService.confirmOrderAndEnroll.
+  @Get('return/:orderId')
+  async paymentReturn(
+    @Param('orderId') orderId: string,
+    @Query('redirect_uri') redirectUri: string,
+    @Query('status') status: string | undefined,
+    @Query('reason') reason: string | undefined,
+    @Query('razorpay_payment_id') razorpayPaymentId: string | undefined,
+    @Query('razorpay_order_id') razorpayOrderId: string | undefined,
+    @Query('razorpay_signature') razorpaySignature: string | undefined,
+    @Res() res: Response,
+  ) {
+    if (!redirectUri) {
+      throw new BadRequestException('Missing redirect_uri');
+    }
+
+    if (status === 'cancelled') {
+      res.redirect(`${redirectUri}?status=cancelled`);
+      return;
+    }
+
+    if (status === 'failed') {
+      const params = new URLSearchParams({ status: 'failed', reason: reason ?? '' });
+      res.redirect(`${redirectUri}?${params.toString()}`);
+      return;
+    }
+
+    if (!razorpayPaymentId || !razorpayOrderId || !razorpaySignature) {
+      res.redirect(`${redirectUri}?status=error`);
+      return;
+    }
+
+    try {
+      await this.paymentsService.confirmOrderAndEnroll({
+        razorpayOrderId,
+        razorpayPaymentId,
+        razorpaySignature,
+      });
+    } catch {
+      // Don't block the redirect on this — the app's own
+      // /enrollments/verify call (and the webhook) are the safety net
+      // if this couldn't complete for any reason.
+    }
+
+    const params = new URLSearchParams({
+      razorpay_payment_id: razorpayPaymentId,
+      razorpay_order_id: razorpayOrderId,
+      razorpay_signature: razorpaySignature,
+    });
+    res.redirect(`${redirectUri}?${params.toString()}`);
+  }
+
   private buildCheckoutHtml(opts: {
     keyId: string;
     amountInPaise: number;
@@ -82,6 +147,9 @@ export class PaymentController {
       description: 'Course purchase',
       theme: { color: '#4f46e5' },
     });
+    // Same-origin, plain https path — NOT the app's custom scheme. See
+    // the comment on the /return route above for why.
+    const returnUrlJson = JSON.stringify(`/payment/return/${opts.orderId}`);
     const redirectUriJson = JSON.stringify(opts.redirectUri);
 
     return `<!DOCTYPE html>
@@ -104,6 +172,7 @@ export class PaymentController {
 
   <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
   <script>
+    var returnUrl = ${returnUrlJson};
     var redirectUri = ${redirectUriJson};
     var options = ${optionsJson};
 
@@ -111,14 +180,16 @@ export class PaymentController {
       var params = new URLSearchParams({
         razorpay_payment_id: response.razorpay_payment_id,
         razorpay_order_id: response.razorpay_order_id,
-        razorpay_signature: response.razorpay_signature
+        razorpay_signature: response.razorpay_signature,
+        redirect_uri: redirectUri
       });
-      window.location.href = redirectUri + '?' + params.toString();
+      window.location.href = returnUrl + '?' + params.toString();
     };
 
     options.modal = {
       ondismiss: function () {
-        window.location.href = redirectUri + '?status=cancelled';
+        var params = new URLSearchParams({ status: 'cancelled', redirect_uri: redirectUri });
+        window.location.href = returnUrl + '?' + params.toString();
       }
     };
 
@@ -127,9 +198,10 @@ export class PaymentController {
     rzp.on('payment.failed', function (response) {
       var params = new URLSearchParams({
         status: 'failed',
-        reason: (response.error && response.error.description) || ''
+        reason: (response.error && response.error.description) || '',
+        redirect_uri: redirectUri
       });
-      window.location.href = redirectUri + '?' + params.toString();
+      window.location.href = returnUrl + '?' + params.toString();
     });
 
     rzp.open();

@@ -82,6 +82,45 @@ export default function Payment() {
     prepareOrder();
   }, []);
 
+  // React Native's JS engine (Hermes) does NOT ship a spec-compliant
+  // global URL/URLSearchParams, and this project has no url-polyfill
+  // installed. Calling `new URL(...)` on a custom-scheme redirect (e.g.
+  // "lmsmobile://payment-callback?...") is exactly the kind of input
+  // that implementation tends to choke on. We parse the query string by
+  // hand instead so the redirect can never throw here.
+  function parseQueryParams(url: string): Record<string, string> {
+    const queryStart = url.indexOf("?");
+    if (queryStart === -1) return {};
+
+    const query = url.slice(queryStart + 1);
+    const result: Record<string, string> = {};
+
+    for (const pair of query.split("&")) {
+      if (!pair) continue;
+      const eq = pair.indexOf("=");
+      const rawKey = eq === -1 ? pair : pair.slice(0, eq);
+      const rawValue = eq === -1 ? "" : pair.slice(eq + 1);
+      if (!rawKey) continue;
+
+      try {
+        result[decodeURIComponent(rawKey)] = decodeURIComponent(rawValue.replace(/\+/g, " "));
+      } catch {
+        result[rawKey] = rawValue;
+      }
+    }
+
+    return result;
+  }
+
+  async function markEnrolledAndCelebrate() {
+    queryClient.invalidateQueries({ queryKey: ["cart"] });
+    queryClient.invalidateQueries({ queryKey: ["my-enrollments"] });
+
+    Alert.alert("Payment successful!", "You're now enrolled.", [
+      { text: "Start learning", onPress: () => router.replace("/(student)/my-courses") },
+    ]);
+  }
+
   // Opens Razorpay's hosted checkout page in an in-app browser (works in
   // Expo Go — no native SDK, no dev client) and waits for it to redirect
   // back with the payment result.
@@ -101,20 +140,31 @@ export default function Payment() {
 
       const result = await WebBrowser.openAuthSessionAsync(checkoutUrl, redirectUri);
 
+      // Covers every platform's way of saying "closed without a redirect"
+      // (iOS/Android differ on "cancel" vs "dismiss").
       if (result.type !== "success" || !result.url) {
-        // User closed the checkout page without paying.
         return;
       }
 
-      const params = new URL(result.url).searchParams;
-      const razorpayPaymentId = params.get("razorpay_payment_id");
-      const razorpayOrderId = params.get("razorpay_order_id");
-      const razorpaySignature = params.get("razorpay_signature");
+      const params = parseQueryParams(result.url);
+      const status = params["status"];
+      const razorpayPaymentId = params["razorpay_payment_id"];
+      const razorpayOrderId = params["razorpay_order_id"];
+      const razorpaySignature = params["razorpay_signature"];
 
-      if (params.get("status") === "cancelled") return;
+      if (status === "cancelled") return;
 
-      if (params.get("status") === "failed") {
+      if (status === "failed") {
         Alert.alert("Payment failed", "Your card/UPI provider declined the payment. Please try again.");
+        return;
+      }
+
+      // We (or the webhook) already marked this order PAID — e.g. the
+      // user backed out and re-tapped Pay before this screen caught up.
+      // Treat it exactly like a fresh success instead of falling through
+      // to "something went wrong".
+      if (status === "already_paid") {
+        await markEnrolledAndCelebrate();
         return;
       }
 
@@ -124,13 +174,7 @@ export default function Payment() {
       }
 
       await verifyPayment({ razorpayOrderId, razorpayPaymentId, razorpaySignature });
-
-      queryClient.invalidateQueries({ queryKey: ["cart"] });
-      queryClient.invalidateQueries({ queryKey: ["my-enrollments"] });
-
-      Alert.alert("Payment successful!", "You're now enrolled.", [
-        { text: "Start learning", onPress: () => router.replace("/(student)/my-courses") },
-      ]);
+      await markEnrolledAndCelebrate();
     } catch (err: any) {
       Alert.alert(
         "Payment couldn't be verified",

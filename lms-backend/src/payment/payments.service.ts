@@ -7,6 +7,8 @@ import Razorpay from 'razorpay';
 import { Payment, PaymentStatus } from './entities/payment.entity';
 import { PaymentItem } from './entities/payment-item.entity';
 import { VerifyPaymentDto } from './dto/verify-payment.dto';
+import { Enrollment } from 'src/enrollments/entities/enrollment.entity';
+import { CartService } from 'src/cart/cart.service';
 
 export interface PaymentLineItem {
   referenceType: string;
@@ -23,6 +25,8 @@ export class PaymentsService {
   constructor(
     @InjectRepository(Payment) private paymentRepo: Repository<Payment>,
     @InjectRepository(PaymentItem) private paymentItemRepo: Repository<PaymentItem>,
+    @InjectRepository(Enrollment) private enrollmentRepo: Repository<Enrollment>,
+    private cartService: CartService,
     private config: ConfigService,
   ) {
     this.razorpay = new Razorpay({
@@ -65,7 +69,7 @@ export class PaymentsService {
     payment.providerPaymentId = providerPaymentId;
     return this.paymentRepo.save(payment);
   }
-  
+
   async createOrderForItems(userId: string, lineItems: PaymentLineItem[], currency: string) {
     const totalAmount = lineItems.reduce((sum, item) => sum + item.amount * (item.quantity ?? 1), 0);
 
@@ -130,5 +134,64 @@ export class PaymentsService {
     payment.status = PaymentStatus.PAID;
     payment.providerPaymentId = dto.razorpayPaymentId;
     return this.paymentRepo.save(payment);
+  }
+
+  /**
+   * Verifies the signature and finalizes the enrollment right here on
+   * the server, called directly from the browser redirect the instant
+   * Razorpay's checkout finishes — BEFORE control ever passes back to
+   * the app. This is what makes the enrollment go through even if the
+   * app crashes, loses connectivity, or the user backs out right after
+   * paying, instead of depending on the client's own /enrollments/verify
+   * call to be the only thing that finalizes it.
+   *
+   * Trust here comes from the HMAC signature (same as the webhook), not
+   * from a logged-in user — this route has no bearer token, since it's
+   * hit by a browser redirect, not the app's own API client. Idempotent:
+   * safe to run again later when the client's own /verify call (or the
+   * webhook) processes the same payment.
+   */
+  async confirmOrderAndEnroll(dto: {
+    razorpayOrderId: string;
+    razorpayPaymentId: string;
+    razorpaySignature: string;
+  }): Promise<void> {
+    const payment = await this.findByProviderOrderId(dto.razorpayOrderId);
+    if (!payment) return;
+
+    if (payment.status !== PaymentStatus.PAID) {
+      const expectedSignature = crypto
+        .createHmac('sha256', this.config.getOrThrow<string>('RAZORPAY_KEY_SECRET'))
+        .update(`${dto.razorpayOrderId}|${dto.razorpayPaymentId}`)
+        .digest('hex');
+
+      if (expectedSignature !== dto.razorpaySignature) {
+        payment.status = PaymentStatus.FAILED;
+        await this.paymentRepo.save(payment);
+        return;
+      }
+
+      payment.status = PaymentStatus.PAID;
+      payment.providerPaymentId = dto.razorpayPaymentId;
+      await this.paymentRepo.save(payment);
+    }
+
+    const paidCourseIds: string[] = [];
+
+    for (const item of payment.items) {
+      if (item.referenceType !== 'course_enrollment') continue;
+      paidCourseIds.push(item.referenceId);
+
+      const existing = await this.enrollmentRepo.findOne({
+        where: { studentId: payment.userId, courseId: item.referenceId },
+      });
+      if (!existing) {
+        await this.enrollmentRepo.save(
+          this.enrollmentRepo.create({ studentId: payment.userId, courseId: item.referenceId }),
+        );
+      }
+    }
+
+    await this.cartService.removeItems(payment.userId, paidCourseIds);
   }
 }
