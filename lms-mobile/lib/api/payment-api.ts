@@ -1,3 +1,8 @@
+// Replace: lms-mobile/lib/api/payment.ts
+// (only change: checkoutCart's param is now optional, and omits the
+// courseIds key entirely when checking out the whole cart — sending an
+// empty array would fail the backend's @ArrayNotEmpty() validator)
+
 import { apiClient } from "./client";
 
 // Response shape from POST /enrollments/checkout.
@@ -19,8 +24,9 @@ export interface VerifyPaymentInput {
   razorpaySignature: string;
 }
 
-export async function checkoutCart(courseIds: string[]): Promise<CheckoutCartResponse> {
-  const { data } = await apiClient.post<CheckoutCartResponse>("/enrollments/checkout", { courseIds });
+export async function checkoutCart(courseIds?: string[]): Promise<CheckoutCartResponse> {
+  const body = courseIds && courseIds.length > 0 ? { courseIds } : {};
+  const { data } = await apiClient.post<CheckoutCartResponse>("/enrollments/checkout", body);
   return data;
 }
 

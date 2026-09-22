@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -18,8 +18,13 @@ import {
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
+import * as WebBrowser from "expo-web-browser";
+import * as Linking from "expo-linking";
+import { useQueryClient } from "@tanstack/react-query";
 
 import { useCart } from "../../context/CartContext";
+import { checkoutCart,  verifyPayment, CheckoutCartResponse} from "@/lib/api/payment-api";
+import { API_BASE_URL } from "../../constants/config";
 import {
   COLORS,
   CARD_SHADOW,
@@ -32,6 +37,7 @@ export default function Payment() {
   const { items, total } = useCart();
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const queryClient = useQueryClient();
 
   const [summaryExpanded, setSummaryExpanded] = useState(false);
   const [saveCard, setSaveCard] = useState(true);
@@ -41,18 +47,98 @@ export default function Payment() {
   const [cardholderName, setCardholderName] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
 
-  // DUMMY handler — no real Stripe/Razorpay/network payment.
-  function handleDummyPay() {
+  // The Razorpay order for this cart. Created once, as soon as the screen
+  // mounts, so it's ready by the time the user taps Pay.
+  const [order, setOrder] = useState<CheckoutCartResponse | null>(null);
+  const [isPreparing, setIsPreparing] = useState(true);
+  const [prepError, setPrepError] = useState<string | null>(null);
+
+  async function prepareOrder() {
+    setIsPreparing(true);
+    setPrepError(null);
+
+    try {
+      const result = await checkoutCart(); // no args -> checkout everything currently in the cart
+
+      if (result.free) {
+        // Nothing to pay for — already enrolled server-side.
+        queryClient.invalidateQueries({ queryKey: ["cart"] });
+        queryClient.invalidateQueries({ queryKey: ["my-enrollments"] });
+        Alert.alert("You're enrolled!", "All the courses in your cart were free.", [
+          { text: "OK", onPress: () => router.replace("/(student)/my-courses") },
+        ]);
+        return;
+      }
+
+      setOrder(result);
+    } catch (err: any) {
+      setPrepError(err?.response?.data?.message ?? "Couldn't start checkout. Please try again.");
+    } finally {
+      setIsPreparing(false);
+    }
+  }
+
+  useEffect(() => {
+    prepareOrder();
+  }, []);
+
+  // Opens Razorpay's hosted checkout page in an in-app browser (works in
+  // Expo Go — no native SDK, no dev client) and waits for it to redirect
+  // back with the payment result.
+  async function handlePay() {
+    if (isProcessing || isPreparing) return;
+
+    if (prepError || !order?.razorpayOrderId) {
+      prepareOrder();
+      return;
+    }
+
     setIsProcessing(true);
 
-    setTimeout(() => {
-      setIsProcessing(false);
+    try {
+      const redirectUri = Linking.createURL("payment-callback");
+      const checkoutUrl = `${API_BASE_URL}/payment/checkout-page/${order.razorpayOrderId}?redirect_uri=${encodeURIComponent(redirectUri)}`;
 
+      const result = await WebBrowser.openAuthSessionAsync(checkoutUrl, redirectUri);
+
+      if (result.type !== "success" || !result.url) {
+        // User closed the checkout page without paying.
+        return;
+      }
+
+      const params = new URL(result.url).searchParams;
+      const razorpayPaymentId = params.get("razorpay_payment_id");
+      const razorpayOrderId = params.get("razorpay_order_id");
+      const razorpaySignature = params.get("razorpay_signature");
+
+      if (params.get("status") === "cancelled") return;
+
+      if (params.get("status") === "failed") {
+        Alert.alert("Payment failed", "Your card/UPI provider declined the payment. Please try again.");
+        return;
+      }
+
+      if (!razorpayPaymentId || !razorpayOrderId || !razorpaySignature) {
+        Alert.alert("Something went wrong", "We couldn't confirm the payment. If money was deducted, it will be verified automatically shortly.");
+        return;
+      }
+
+      await verifyPayment({ razorpayOrderId, razorpayPaymentId, razorpaySignature });
+
+      queryClient.invalidateQueries({ queryKey: ["cart"] });
+      queryClient.invalidateQueries({ queryKey: ["my-enrollments"] });
+
+      Alert.alert("Payment successful!", "You're now enrolled.", [
+        { text: "Start learning", onPress: () => router.replace("/(student)/my-courses") },
+      ]);
+    } catch (err: any) {
       Alert.alert(
-        "Dummy payment",
-        "This is a placeholder — no real charge was made."
+        "Payment couldn't be verified",
+        err?.response?.data?.message ?? "Please check your enrollments — if you were charged, it will still go through via our webhook."
       );
-    }, 1500);
+    } finally {
+      setIsProcessing(false);
+    }
   }
 
   return (
@@ -295,7 +381,7 @@ export default function Payment() {
 
           <View style={styles.walletRow}>
             <Pressable
-              onPress={handleDummyPay}
+              onPress={handlePay}
               style={({ pressed }) => [
                 styles.walletButton,
                 styles.appleButton,
@@ -314,7 +400,7 @@ export default function Payment() {
             </Pressable>
 
             <Pressable
-              onPress={handleDummyPay}
+              onPress={handlePay}
               style={({ pressed }) => [
                 styles.walletButton,
                 styles.googleButton,
@@ -348,7 +434,7 @@ export default function Payment() {
               </Text>
 
               <Text style={styles.headingSubtitle}>
-                Enter your payment information
+                Entered securely on Razorpay's checkout
               </Text>
             </View>
 
@@ -558,8 +644,8 @@ export default function Payment() {
         </View>
 
         <Pressable
-          onPress={handleDummyPay}
-          disabled={isProcessing}
+          onPress={handlePay}
+          disabled={isProcessing || isPreparing || !!prepError}
           style={({ pressed }) => [
             styles.payButtonOuter,
             pressed &&
@@ -573,10 +659,10 @@ export default function Payment() {
             end={{ x: 1, y: 1 }}
             style={[
               styles.payButton,
-              isProcessing && styles.payButtonDisabled,
+              (isProcessing || isPreparing || prepError) && styles.payButtonDisabled,
             ]}
           >
-            {isProcessing ? (
+            {isProcessing || isPreparing ? (
               <ActivityIndicator color="#fff" />
             ) : (
               <>
@@ -590,11 +676,11 @@ export default function Payment() {
 
                 <View>
                   <Text style={styles.payText}>
-                    Pay & Start Learning
+                    {prepError ? "Try again" : "Pay & Start Learning"}
                   </Text>
 
                   <Text style={styles.paySubtext}>
-                    Secure checkout
+                    Secure checkout via Razorpay
                   </Text>
                 </View>
               </>
