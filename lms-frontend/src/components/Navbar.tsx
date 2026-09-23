@@ -2,6 +2,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { routeMap, DEFAULT_PAGE_TITLE } from '../config/routeMap';
 import { useCurrentUser } from '../hooks/useCurrentUser';
 import { useCart } from '../context/CartComtext';
+import { disconnectPaymentSocket } from '../lib/socket';
 
 export default function Navbar() {
   const navigate = useNavigate();
@@ -14,6 +15,7 @@ export default function Navbar() {
   const handleLogout = () => {
     localStorage.removeItem('accessToken');
     localStorage.removeItem('refreshToken');
+    disconnectPaymentSocket();
     navigate('/login');
   };
 

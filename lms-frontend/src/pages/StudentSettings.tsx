@@ -1,6 +1,7 @@
 import { useState } from 'react'; // local toggle state
 import { useNavigate } from 'react-router-dom'; // used for the logout-everywhere action
 import DashboardLayout from '../components/DashboardLayout'; // sidebar + navbar shell
+import { disconnectPaymentSocket } from '../lib/socket';
 import { studentSidebarSections } from '../config/studentSidebar'; // student's sidebar config
 
 const SETTINGS_KEY = 'lms-notification-settings'; // localStorage key — namespaced so it doesn't collide with anything else
@@ -37,6 +38,7 @@ export default function StudentSettings() {
   const handleLogoutEverywhere = () => { // clears local session — a real "log out of all devices" would need a backend token-revocation list, which doesn't exist yet, so this is scoped honestly to just this device
     localStorage.removeItem('accessToken');
     localStorage.removeItem('refreshToken');
+    disconnectPaymentSocket();
     window.dispatchEvent(new Event('auth-changed'));
     navigate('/login');
 

@@ -9,6 +9,7 @@ import { PaymentItem } from './entities/payment-item.entity';
 import { VerifyPaymentDto } from './dto/verify-payment.dto';
 import { Enrollment } from 'src/enrollments/entities/enrollment.entity';
 import { CartService } from 'src/cart/cart.service';
+import { PaymentsGateway } from './payments.gateway';
 
 export interface PaymentLineItem {
   referenceType: string;
@@ -28,6 +29,7 @@ export class PaymentsService {
     @InjectRepository(Enrollment) private enrollmentRepo: Repository<Enrollment>,
     private cartService: CartService,
     private config: ConfigService,
+    private paymentsGateway: PaymentsGateway,
   ) {
     this.razorpay = new Razorpay({
       key_id: this.config.getOrThrow<string>('RAZORPAY_KEY_ID'),
@@ -193,5 +195,11 @@ export class PaymentsService {
     }
 
     await this.cartService.removeItems(payment.userId, paidCourseIds);
+
+    this.paymentsGateway.notifyPaymentSuccess(payment.userId, {
+      orderId: payment.providerOrderId,
+      paymentId: dto.razorpayPaymentId,
+      enrolledCourseIds: paidCourseIds,
+    });
   }
 }

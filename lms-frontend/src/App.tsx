@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { CartProvider } from './context/CartComtext';
+import PaymentSuccessToast from './components/PaymentSuccessToast';
 
 import LandingPage from './pages/Landing';
 import LoginPage from './pages/login';
@@ -26,6 +27,7 @@ export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <CartProvider>
+        <PaymentSuccessToast />
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<LandingPage />} />

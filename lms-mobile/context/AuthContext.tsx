@@ -3,6 +3,7 @@ import { User } from "../types/user";
 import { saveTokens, clearTokens, getAccessToken } from "../lib/storage/tokenStorage";
 import { loginRequest, registerRequest, getMeRequest } from "../lib/api/auth";
 import { setUnauthorizedHandler } from "../lib/api/client";
+import { disconnectPaymentSocket } from "../lib/socket";
 
 type AuthContextType = {
   user: User | null;
@@ -22,6 +23,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const logout = useCallback(async () => {
     await clearTokens();
+    disconnectPaymentSocket();
     setUser(null);
   }, []);
 

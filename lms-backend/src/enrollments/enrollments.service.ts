@@ -9,6 +9,7 @@ import { Repository } from 'typeorm';
 import { Enrollment } from './entities/enrollment.entity';
 import { CoursesService } from '../courses/courses.service';
 import { PaymentsService } from 'src/payment/payments.service';
+import { PaymentsGateway } from 'src/payment/payments.gateway';
 import { Payment, PaymentStatus } from 'src/payment/entities/payment.entity';
 import { CheckoutCartDto } from './dto/checkout-cart.dto';
 import { VerifyPaymentDto } from 'src/payment/dto/verify-payment.dto';
@@ -21,6 +22,7 @@ export class EnrollmentsService {
     private enrollmentRepo: Repository<Enrollment>,
     private coursesService: CoursesService,
     private paymentsService: PaymentsService,
+    private paymentsGateway: PaymentsGateway,
     private cartService: CartService,
   ) {}
 
@@ -140,6 +142,18 @@ export class EnrollmentsService {
     }
 
     await this.cartService.removeItems(studentId, paidCourseIds);
+
+    // Push the result over the WebSocket too — this is what lets the
+    // webhook path (which the client never itself called) still tell an
+    // open tab "you're enrolled now" instead of the tab having no way
+    // to find out. Harmless no-op if the client already knows because
+    // it made the /verify call itself.
+    this.paymentsGateway.notifyPaymentSuccess(studentId, {
+      orderId: payment.providerOrderId,
+      paymentId: payment.providerPaymentId ?? '',
+      enrolledCourseIds: paidCourseIds,
+    });
+
     return enrollments;
   }
 
