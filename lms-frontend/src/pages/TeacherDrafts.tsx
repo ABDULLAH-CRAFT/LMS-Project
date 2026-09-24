@@ -1,3 +1,4 @@
+// lms-frontend/src/pages/TeacherDrafts.tsx
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
@@ -61,19 +62,19 @@ export default function TeacherDrafts() {
 
   return (
     <DashboardLayout sidebarSections={teacherSidebarSections}>
-      <h1 className="text-3xl font-bold text-text mb-1">Draft Courses</h1> {/* CHANGED — white heading */}
+      <h1 className="text-3xl font-bold text-text mb-1">Draft Courses</h1>
       <p className="text-muted mb-8">Unpublished courses only you can see. Publish when ready.</p>
 
-      <form onSubmit={handleSubmit} className="bg-surface rounded-2xl p-6 shadow-soft mb-8 max-w-lg"> {/* CHANGED — glass form card */}
-        <h2 className="font-medium text-text mb-4">Create a new course</h2> {/* CHANGED — white subheading */}
+      <form onSubmit={handleSubmit} className="bg-surface rounded-2xl p-6 shadow-soft mb-8 max-w-lg">
+        <h2 className="font-medium text-text mb-4">Create a new course</h2>
         <input
           type="text"
           placeholder="Course title"
           value={formData.title}
           onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-          className="w-full bg-surface-strong border border-border rounded-lg px-4 py-2 text-sm text-text placeholder:text-placeholder outline-none focus:border-primary-500/50 focus:ring-4 focus:ring-primary-500/10 transition mb-1" // CHANGED — glass input
+          className="w-full bg-surface-strong border border-border rounded-lg px-4 py-2 text-sm text-text placeholder:text-placeholder outline-none focus:border-primary-500/50 focus:ring-4 focus:ring-primary-500/10 transition mb-1"
         />
-        {errors.title && <p className="text-danger-600 text-xs mb-2">{errors.title}</p>} {/* CHANGED — lighter red */}
+        {errors.title && <p className="text-danger-600 text-xs mb-2">{errors.title}</p>}
 
         <textarea
           placeholder="Description"
@@ -97,7 +98,7 @@ export default function TeacherDrafts() {
         <button
           type="submit"
           disabled={createMutation.isPending}
-          className="w-full bg-gradient-to-r from-primary-600 to-secondary-400 text-white rounded-lg py-2 text-sm font-semibold mt-3 hover:scale-[1.01] transition disabled:opacity-50" // CHANGED — gradient button
+          className="w-full bg-gradient-to-r from-primary-600 to-secondary-400 text-white rounded-lg py-2 text-sm font-semibold mt-3 hover:scale-[1.01] transition disabled:opacity-50"
         >
           {createMutation.isPending ? 'Creating...' : 'Create Course'}
         </button>
@@ -107,19 +108,19 @@ export default function TeacherDrafts() {
         {coursesQuery.isLoading && <p className="text-sm text-muted">Loading...</p>}
 
         {draftCourses?.map((course) => (
-          <div key={course.id} className="bg-surface rounded-xl p-4 shadow-soft mb-3 flex items-center justify-between"> {/* CHANGED — glass row */}
+          <div key={course.id} className="bg-surface rounded-xl p-4 shadow-soft mb-3 flex items-center justify-between">
             <div>
-              <h3 className="font-medium text-text">{course.title}</h3> {/* CHANGED — white title */}
-              <p className="text-xs text-tertiary-600">${course.price} · draft</p> {/* CHANGED — brighter amber for dark bg */}
+              <h3 className="font-medium text-text">{course.title}</h3>
+              <p className="text-xs text-tertiary-600">₹{course.price} · draft</p>
             </div>
             <div className="flex items-center gap-2">
-              <Link to={`/teacher/courses/${course.id}/edit`} className="text-xs text-muted hover:text-text transition"> {/* CHANGED — dark-theme hover */}
+              <Link to={`/teacher/courses/${course.id}/edit`} className="text-xs text-muted hover:text-text transition">
                 Manage content
               </Link>
               <button
                 onClick={() => publishMutation.mutate(course.id)}
                 disabled={publishMutation.isPending}
-                className="text-xs bg-gradient-to-r from-primary-600 to-secondary-400 text-white px-3 py-1.5 rounded-full disabled:opacity-50" // CHANGED — gradient button
+                className="text-xs bg-gradient-to-r from-primary-600 to-secondary-400 text-white px-3 py-1.5 rounded-full disabled:opacity-50"
               >
                 Publish
               </button>

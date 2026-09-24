@@ -1,3 +1,4 @@
+// lms-frontend/src/pages/CourseDetail.tsx
 import { useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -53,7 +54,7 @@ export default function CourseDetail() {
 
   if (courseQuery.isLoading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center text-muted"> {/* CHANGED — dark bg */}
+      <div className="min-h-screen bg-background flex items-center justify-center text-muted">
         Loading course...
       </div>
     );
@@ -61,9 +62,9 @@ export default function CourseDetail() {
 
   if (courseQuery.isError || !courseQuery.data) {
     return (
-      <div className="min-h-screen bg-background flex flex-col items-center justify-center gap-3"> {/* CHANGED — dark bg */}
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center gap-3">
         <p className="text-muted">Course not found.</p>
-        <Link to="/student" className="text-sm font-medium text-primary-600 hover:text-primary-700"> {/* CHANGED — purple link */}
+        <Link to="/student" className="text-sm font-medium text-primary-600 hover:text-primary-700">
           ← Back to catalog
         </Link>
       </div>
@@ -76,45 +77,45 @@ export default function CourseDetail() {
 
   function renderLessonContent(contentType: string, content: string) {
     if (contentType === 'video') {
-      return <a href={content} target="_blank" rel="noopener noreferrer" className="text-sm text-secondary-600 hover:underline break-all">{content}</a>; // CHANGED — cyan link fits the dark palette better than indigo
+      return <a href={content} target="_blank" rel="noopener noreferrer" className="text-sm text-secondary-600 hover:underline break-all">{content}</a>;
     }
-    return <p className="text-sm text-muted leading-relaxed whitespace-pre-wrap">{content}</p>; // CHANGED — lighter gray for readability on dark bg
+    return <p className="text-sm text-muted leading-relaxed whitespace-pre-wrap">{content}</p>;
   }
 
   return (
-    <div className="min-h-screen bg-background relative overflow-hidden"> {/* CHANGED — dark base */}
+    <div className="min-h-screen bg-background relative overflow-hidden">
 
-      <div className="pointer-events-none fixed inset-0 z-0"> {/* ambient glow, same device as dashboards */}
+      <div className="pointer-events-none fixed inset-0 z-0">
         <div className="absolute -left-40 -top-40 h-125 w-125 rounded-full bg-primary-700/10 blur-[140px]" />
         <div className="absolute -right-40 top-1/3 h-125 w-125 rounded-full bg-secondary-600/10 blur-[140px]" />
       </div>
 
-      <div className="max-w-3xl mx-auto px-6 py-10 relative z-10"> {/* z-10 above the glow */}
+      <div className="max-w-3xl mx-auto px-6 py-10 relative z-10">
 
-        <Link to="/student" className="text-sm text-muted hover:text-text transition mb-6 inline-block"> {/* CHANGED — dark-theme hover */}
+        <Link to="/student" className="text-sm text-muted hover:text-text transition mb-6 inline-block">
           ← Back to catalog
         </Link>
 
-        <div className="bg-surface rounded-2xl overflow-hidden shadow-soft mb-6"> {/* CHANGED — glass card */}
-          <div className="h-48 bg-gradient-to-br from-primary-600 to-secondary-500 flex items-center justify-center"> {/* CHANGED — theme gradient instead of indigo/blue */}
+        <div className="bg-surface rounded-2xl overflow-hidden shadow-soft mb-6">
+          <div className="h-48 bg-gradient-to-br from-primary-600 to-secondary-500 flex items-center justify-center">
             <span className="text-6xl font-bold text-white">{course.title.charAt(0).toUpperCase()}</span>
           </div>
 
           <div className="p-8">
-            <h1 className="text-2xl font-bold text-text mb-2">{course.title}</h1> {/* CHANGED — white heading */}
-            <p className="text-muted mb-2 leading-relaxed">{course.description}</p> {/* CHANGED — lighter gray */}
+            <h1 className="text-2xl font-bold text-text mb-2">{course.title}</h1>
+            <p className="text-muted mb-2 leading-relaxed">{course.description}</p>
 
             {curriculumQuery.data && (
-              <p className="text-xs text-muted mb-6"> {/* CHANGED — muted */}
+              <p className="text-xs text-muted mb-6">
                 {curriculumQuery.data.length} module{curriculumQuery.data.length !== 1 ? 's' : ''} · {totalLessons} lesson{totalLessons !== 1 ? 's' : ''}
               </p>
             )}
 
-            <div className="flex items-center justify-between border-t border-border pt-6"> {/* CHANGED — dark divider */}
-              <span className="text-2xl font-bold text-text">${course.price}</span> {/* CHANGED — white price */}
+            <div className="flex items-center justify-between border-t border-border pt-6">
+              <span className="text-2xl font-bold text-text">₹{course.price}</span>
 
               {isEnrolled ? (
-                <span className="bg-secondary-500/10 border border-secondary-500/30 text-secondary-600 px-6 py-3 rounded-full text-sm font-medium"> {/* CHANGED — glass green badge */}
+                <span className="bg-secondary-500/10 border border-secondary-500/30 text-secondary-600 px-6 py-3 rounded-full text-sm font-medium">
                   ✓ Enrolled
                 </span>
               ) : (
@@ -135,7 +136,7 @@ export default function CourseDetail() {
                     );
                   }}
                   disabled={payMutation.isPending}
-                  className="bg-gradient-to-r from-primary-600 to-secondary-400 text-white px-6 py-3 rounded-full text-sm font-semibold hover:scale-[1.02] transition disabled:opacity-50" // CHANGED — theme gradient button
+                  className="bg-gradient-to-r from-primary-600 to-secondary-400 text-white px-6 py-3 rounded-full text-sm font-semibold hover:scale-[1.02] transition disabled:opacity-50"
                 >
                   {enrollMutation.isPending ? 'Enrolling...' : 'Enroll now'}
                 </button>
@@ -143,21 +144,21 @@ export default function CourseDetail() {
             </div>
 
             {enrollMutation.isError && (
-              <p className="text-danger-600 text-xs mt-3">Something went wrong. Please try again.</p> // CHANGED — lighter red for dark bg
+              <p className="text-danger-600 text-xs mt-3">Something went wrong. Please try again.</p>
             )}
           </div>
         </div>
 
         {curriculumQuery.data && curriculumQuery.data.length > 0 && (
-          <div className="bg-surface rounded-2xl overflow-hidden shadow-soft "> {/* CHANGED — glass card */}
-            <div className="px-6 py-5 border-b border-border"> {/* CHANGED — dark divider */}
-              <h2 className="font-semibold text-text">Course content</h2> {/* CHANGED — white heading */}
+          <div className="bg-surface rounded-2xl overflow-hidden shadow-soft ">
+            <div className="px-6 py-5 border-b border-border">
+              <h2 className="font-semibold text-text">Course content</h2>
             </div>
 
-            <div className="divide-y divide-border"> {/* CHANGED — subtle dark dividers */}
+            <div className="divide-y divide-border">
               {curriculumQuery.data.map((module, moduleIndex) => (
                 <div key={module.id} className="px-6 py-4">
-                  <p className="text-sm font-medium text-text mb-2"> {/* CHANGED — white module title */}
+                  <p className="text-sm font-medium text-text mb-2">
                     {moduleIndex + 1}. {module.title}
                   </p>
 
@@ -171,8 +172,8 @@ export default function CourseDetail() {
                           }}
                           className={
                             isEnrolled
-                              ? 'w-full flex items-center gap-2 text-sm px-3 py-2 rounded-lg text-left transition text-muted-dark hover:bg-surface cursor-pointer' // CHANGED — light-on-dark, subtle hover
-                              : 'w-full flex items-center gap-2 text-sm px-3 py-2 rounded-lg text-left transition text-muted cursor-not-allowed' // CHANGED — dimmer for locked state
+                              ? 'w-full flex items-center gap-2 text-sm px-3 py-2 rounded-lg text-left transition text-muted-dark hover:bg-surface cursor-pointer'
+                              : 'w-full flex items-center gap-2 text-sm px-3 py-2 rounded-lg text-left transition text-muted cursor-not-allowed'
                           }
                         >
                           {isEnrolled ? (
@@ -185,7 +186,7 @@ export default function CourseDetail() {
                             </svg>
                           )}
                           <span className="flex-1">{lesson.title}</span>
-                          <span className="text-xs uppercase text-muted">{lesson.contentType}</span> {/* CHANGED — muted badge */}
+                          <span className="text-xs uppercase text-muted">{lesson.contentType}</span>
                         </button>
 
                         {expandedLessonId === lesson.id && isEnrolled && (
@@ -197,7 +198,7 @@ export default function CourseDetail() {
                     ))}
 
                     {module.lessons.length === 0 && (
-                      <p className="text-xs text-muted px-3 py-1">No lessons in this module yet.</p> // CHANGED — muted
+                      <p className="text-xs text-muted px-3 py-1">No lessons in this module yet.</p>
                     )}
                   </div>
                 </div>
@@ -205,7 +206,7 @@ export default function CourseDetail() {
             </div>
 
             {!isEnrolled && (
-              <div className="px-6 py-4 bg-surface text-center"> {/* CHANGED — subtle glass footer strip */}
+              <div className="px-6 py-4 bg-surface text-center">
                 <p className="text-xs text-muted">Enroll to unlock all lesson content.</p>
               </div>
             )}

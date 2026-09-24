@@ -1,3 +1,4 @@
+// lms-frontend/src/pages/TeacherPublished.tsx
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '../lib/axios';
@@ -18,19 +19,19 @@ export default function TeacherPublished() {
 
   return (
     <DashboardLayout sidebarSections={teacherSidebarSections}>
-      <h1 className="text-3xl font-bold text-text mb-1">Published Courses</h1> {/* CHANGED — white heading */}
+      <h1 className="text-3xl font-bold text-text mb-1">Published Courses</h1>
       <p className="text-muted mb-8">Live courses students can currently see and enroll in.</p>
 
       <div className="max-w-lg">
         {coursesQuery.isLoading && <p className="text-sm text-muted">Loading...</p>}
 
         {publishedCourses?.map((course) => (
-          <div key={course.id} className="bg-surface rounded-xl p-4 shadow-soft mb-3 flex items-center justify-between"> {/* CHANGED — glass row */}
+          <div key={course.id} className="bg-surface rounded-xl p-4 shadow-soft mb-3 flex items-center justify-between">
             <div>
-              <h3 className="font-medium text-text">{course.title}</h3> {/* CHANGED — white title */}
-              <p className="text-xs text-secondary-600">${course.price} · published</p> {/* CHANGED — brighter green */}
+              <h3 className="font-medium text-text">{course.title}</h3>
+              <p className="text-xs text-secondary-600">₹{course.price} · published</p>
             </div>
-            <Link to={`/teacher/courses/${course.id}/edit`} className="text-xs text-muted hover:text-text transition"> {/* CHANGED — dark-theme hover */}
+            <Link to={`/teacher/courses/${course.id}/edit`} className="text-xs text-muted hover:text-text transition">
               Manage content
             </Link>
           </div>
