@@ -1,46 +1,44 @@
-// lms-frontend/src/pages/TeacherPublished.tsx
 import { Link } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
-import { api } from '../lib/axios';
-import type { Course } from '../types/course';
+import { Eye } from 'lucide-react';
 import DashboardLayout from '../components/DashboardLayout';
+import TeacherCourseCard from '../components/TeacherCourseCard';
 import { teacherSidebarSections } from '../config/teacherSidebar';
+import { useTeacherOverview } from '../hooks/useTeacherOverview';
+import { cardClass, primaryButtonClass, secondaryButtonClass } from '../config/ui';
 
 export default function TeacherPublished() {
-  const coursesQuery = useQuery({
-    queryKey: ['my-courses'],
-    queryFn: async () => {
-      const response = await api.get<Course[]>('/courses/mine');
-      return response.data;
-    },
-  });
-
-  const publishedCourses = coursesQuery.data?.filter((c) => c.status === 'published');
+  const overviewQuery = useTeacherOverview();
+  const published = overviewQuery.data?.courses.filter((c) => c.status === 'published');
 
   return (
     <DashboardLayout sidebarSections={teacherSidebarSections}>
       <h1 className="text-3xl font-bold text-text mb-1">Published Courses</h1>
       <p className="text-muted mb-8">Live courses students can currently see and enroll in.</p>
 
-      <div className="max-w-lg">
-        {coursesQuery.isLoading && <p className="text-sm text-muted">Loading...</p>}
+      {overviewQuery.isLoading && <p className="text-sm text-muted">Loading…</p>}
 
-        {publishedCourses?.map((course) => (
-          <div key={course.id} className="bg-surface rounded-xl p-4 shadow-soft mb-3 flex items-center justify-between">
-            <div>
-              <h3 className="font-medium text-text">{course.title}</h3>
-              <p className="text-xs text-secondary-600">₹{course.price} · published</p>
-            </div>
-            <Link to={`/teacher/courses/${course.id}/edit`} className="text-xs text-muted hover:text-text transition">
-              Manage content
-            </Link>
-          </div>
-        ))}
+      {published && published.length > 0 && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
+          {published.map((course, index) => (
+            <TeacherCourseCard key={course.id} course={course} index={index}>
+              <Link to={`/teacher/courses/${course.id}/edit`} className={`${primaryButtonClass} flex-1 !px-3 !py-2 !text-xs`}>
+                Manage content
+              </Link>
+              <Link to={`/courses/${course.id}`} className={`${secondaryButtonClass} flex-1 !px-3 !py-2 !text-xs`}>
+                <Eye className="w-3.5 h-3.5" /> Preview
+              </Link>
+            </TeacherCourseCard>
+          ))}
+        </div>
+      )}
 
-        {publishedCourses?.length === 0 && (
-          <p className="text-sm text-muted">Nothing published yet — publish a draft to see it here.</p>
-        )}
-      </div>
+      {published?.length === 0 && (
+        <div className={`${cardClass} p-12 text-center max-w-xl`}>
+          <p className="text-text font-medium mb-1">Nothing published yet</p>
+          <p className="text-sm text-muted mb-4">Publish a draft and it will show up here.</p>
+          <Link to="/teacher/drafts" className={secondaryButtonClass}>Go to drafts</Link>
+        </div>
+      )}
     </DashboardLayout>
   );
 }

@@ -6,6 +6,7 @@ import { Roles } from 'src/common/roles.decorator';
 import { UserRole } from '../users/entities/user.entity';
 import { CoursesService } from './courses.service';
 import { CreateCourseDto } from './dto/create-course.dto';
+import { UpdateCourseDto } from './dto/update-course.dto'; // NEW
 
 @ApiTags('Courses')
 @Controller('courses')
@@ -25,6 +26,15 @@ export class CoursesController {
   @Roles(UserRole.TEACHER)
   findMine(@Req() req: any) {
     return this.coursesService.findByTeacher(req.user.userId);
+  }
+
+  @Get('mine/overview') // NEW — must ALSO sit above ':id'. Courses + student/lesson counts + totals, for the teacher dashboard
+  @ApiBearerAuth()
+  @ApiOperation({ summary: "Teacher dashboard data: the logged-in teacher's courses with counts, plus totals" })
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.TEACHER)
+  getMyOverview(@Req() req: any) {
+    return this.coursesService.getTeacherOverview(req.user.userId);
   }
 
   @Get(':id') // MOVED — now comes after 'mine', so it only catches actual course IDs
@@ -49,5 +59,14 @@ export class CoursesController {
   @Roles(UserRole.TEACHER)
   publish(@Req() req: any, @Param('id') id: string) {
     return this.coursesService.publish(id, req.user.userId);
+  }
+
+  @Patch(':id') // NEW — edit details / set or remove the cover image
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Update a course: title, description, price, cover image (owning teacher only)' })
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.TEACHER)
+  update(@Req() req: any, @Param('id') id: string, @Body() dto: UpdateCourseDto) {
+    return this.coursesService.update(id, req.user.userId, dto);
   }
 }

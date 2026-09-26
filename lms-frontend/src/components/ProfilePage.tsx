@@ -5,15 +5,18 @@ import { useCurrentUser } from '../hooks/useCurrentUser'; // real logged-in user
 import DashboardLayout from './DashboardLayout'; // sidebar + navbar shell
 import type { SidebarSection } from './Sidebar'; // type for the sidebar prop
 import type { LearningStats } from '../types/progress'; // shape of GET /progress/me/stats
+import { useTeacherOverview } from '../hooks/useTeacherOverview'; // NEW — teaching stats for the teacher variant
 
 interface ProfilePageProps {
-  sidebarSections: SidebarSection[]; // passed in by StudentProfile or TeacherProfile — the ONLY thing that differs between them
+  sidebarSections: SidebarSection[]; // passed in by StudentProfile or TeacherProfile
+  variant?: 'student' | 'teacher'; // NEW — teachers get teaching stats instead of streak/XP/level. Defaults to 'student', so StudentProfile needs no change
 }
 
 // Simple flavor titles by level — purely cosmetic, not derived from any real data.
 const LEVEL_TITLES = ['Newcomer', 'Learner', 'Achiever', 'Scholar', 'Expert', 'Master'];
 
-export default function ProfilePage({ sidebarSections }: ProfilePageProps) {
+export default function ProfilePage({ sidebarSections, variant = 'student' }: ProfilePageProps) {
+  const isTeacher = variant === 'teacher';
   const queryClient = useQueryClient();
   const { data: user } = useCurrentUser(); // current name/email/role, used to pre-fill the name field
 
@@ -37,8 +40,11 @@ export default function ProfilePage({ sidebarSections }: ProfilePageProps) {
       const response = await api.get<LearningStats>('/progress/me/stats');
       return response.data;
     },
+    enabled: !isTeacher, // CHANGED — /progress/me/stats is student-only; teachers used to fire it and get a 403
   });
   const stats = statsQuery.data;
+  const teachingQuery = useTeacherOverview(isTeacher); // NEW — only fetched for teachers
+  const teaching = teachingQuery.data?.totals;
 
   const levelTitle = LEVEL_TITLES[Math.min((stats?.level ?? 1) - 1, LEVEL_TITLES.length - 1)];
   const levelPercent = stats ? Math.round((stats.currentLevelXp / stats.nextLevelXp) * 100) : 0;
@@ -136,12 +142,12 @@ export default function ProfilePage({ sidebarSections }: ProfilePageProps) {
 
             <div className="flex items-center gap-2">
               <span className="text-xl font-bold text-text">{user?.name ?? 'Loading...'}</span>
-              <span className="bg-primary-600 text-white text-[10px] font-extrabold px-2 py-0.5 rounded-full">PRO</span>
+              <span className="bg-primary-600 text-white text-[10px] font-extrabold px-2 py-0.5 rounded-full">{isTeacher ? 'INSTRUCTOR' : 'PRO'}</span> {/* CHANGED */}
             </div>
-            <p className="text-sm text-muted italic mt-1">Lifelong Learner</p>
+            <p className="text-sm text-muted italic mt-1">{isTeacher ? 'Course Instructor' : 'Lifelong Learner'}</p> {/* CHANGED */}
 
             <span className="inline-flex items-center gap-1.5 bg-surface-strong rounded-full px-3 py-1.5 text-xs text-muted-dark mt-3 capitalize">
-              🎓 {user?.role ?? 'Student'} • LMS Member
+              🎓 {isTeacher ? 'Instructor' : (user?.role ?? 'Student')} • LMS Member
             </span>
 
             <div className="flex items-center gap-3 mt-6">
@@ -192,6 +198,24 @@ export default function ProfilePage({ sidebarSections }: ProfilePageProps) {
 
           {/* Right column: streak/XP + level progress, stacked, taking the remaining 2/3 width */}
           <div className="lg:col-span-2 flex flex-col gap-6">
+            {isTeacher ? (
+              /* ===== NEW — teacher variant: teaching stats (real data from /courses/mine/overview) ===== */
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                {[
+                  { emoji: '📚', tint: 'bg-primary-100', value: teaching?.courses ?? 0, label: 'Courses' },
+                  { emoji: '✅', tint: 'bg-secondary-100', value: teaching?.published ?? 0, label: 'Published' },
+                  { emoji: '👩‍🎓', tint: 'bg-tertiary-100', value: teaching?.students ?? 0, label: 'Student Enrollments' },
+                  { emoji: '🎬', tint: 'bg-surface-strong', value: teaching?.lessons ?? 0, label: 'Lessons Created' },
+                ].map((stat) => (
+                  <div key={stat.label} className="bg-surface rounded-2xl shadow-soft p-5 flex flex-col items-start gap-2">
+                    <div className={`w-9 h-9 rounded-full flex items-center justify-center text-lg ${stat.tint}`}>{stat.emoji}</div>
+                    <span className="text-lg font-extrabold text-text">{stat.value.toLocaleString()}</span>
+                    <span className="text-xs text-muted-dark">{stat.label}</span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <>
             {/* ===== Stats: streak, XP, lessons completed, courses completed (real data) ===== */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
               <div className="bg-surface rounded-2xl shadow-soft p-5 flex flex-col items-start gap-2">
@@ -238,6 +262,8 @@ export default function ProfilePage({ sidebarSections }: ProfilePageProps) {
                 <span>{(stats?.nextLevelXp ?? 500).toLocaleString()} XP (Target)</span>
               </div>
             </div>
+              </>
+            )}
           </div>
         </div>
 

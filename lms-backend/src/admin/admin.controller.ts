@@ -1,29 +1,42 @@
-import { Controller, Post, Get, Body, UseGuards } from '@nestjs/common'; // added Get
-import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger'; // Swagger decorators
-import { JwtAuthGuard } from 'src/auth/guard/jwt-auth.guard'; // auth guard
-import { RolesGuard } from 'src/common/roles.guard'; // role guard
-import { Roles } from 'src/common/roles.decorator'; // role decorator
-import { UserRole } from '../users/entities/user.entity'; // role enum
-import { AdminService } from './admin.service'; // service
-import { CreateTeacherDto } from './create-teacher.dto'; // DTO
+// lms-backend/src/admin/admin.controller.ts
+import { Controller, Post, Get, Delete, Body, Param, UseGuards } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
+import { JwtAuthGuard } from 'src/auth/guard/jwt-auth.guard';
+import { RolesGuard } from 'src/common/roles.guard';
+import { Roles } from 'src/common/roles.decorator';
+import { UserRole } from '../users/entities/user.entity';
+import { AdminService } from './admin.service';
+import { CreateTeacherDto } from './create-teacher.dto';
 
-@ApiTags('Admin') // groups under "Admin" in Swagger
-@ApiBearerAuth() // every route here needs a token
-@Controller('admin') // base path: /admin
-@UseGuards(JwtAuthGuard, RolesGuard) // must be logged in AND have the right role
-@Roles(UserRole.ADMIN) // admin-only for every route in this controller
+@ApiTags('Admin')
+@ApiBearerAuth()
+@Controller('admin')
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles(UserRole.ADMIN)
 export class AdminController {
-  constructor(private adminService: AdminService) {} // injects the service
+  constructor(private adminService: AdminService) {}
 
-  @Post('create-teacher') // existing route, unchanged
+  @Post('create-teacher')
   @ApiOperation({ summary: 'Create a teacher account (admin only)' })
   createTeacher(@Body() dto: CreateTeacherDto) {
     return this.adminService.createTeacher(dto);
   }
 
-  @Get('teachers') // NEW — GET /admin/teachers
-  @ApiOperation({ summary: 'List all teacher accounts (admin only)' }) // Swagger description
+  @Get('teachers')
+  @ApiOperation({ summary: 'List all teacher accounts (admin only)' })
   listTeachers() {
-    return this.adminService.listTeachers(); // returns all teachers, no passwords
+    return this.adminService.listTeachers();
+  }
+
+  @Delete('teachers/:id')
+  @ApiOperation({ summary: 'Permanently delete a teacher account (admin only)' })
+  deleteTeacher(@Param('id') id: string) {
+    return this.adminService.deleteTeacher(id);
+  }
+
+  @Get('courses') // NEW — GET /admin/courses
+  @ApiOperation({ summary: 'List every course, any status, with its teacher (admin only)' })
+  listAllCourses() {
+    return this.adminService.listAllCourses();
   }
 }

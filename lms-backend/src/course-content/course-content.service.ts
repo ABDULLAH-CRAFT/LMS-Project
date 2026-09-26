@@ -25,7 +25,9 @@ export class CourseContentService {
 
   async createModule(teacherId: string, courseId: string, dto: CreateModuleDto) {
     await this.verifyOwnership(courseId, teacherId); // confirms this teacher owns the course before allowing changes
-    const module = this.moduleRepo.create({ ...dto, courseId }); // build in memory
+    const last = await this.moduleRepo.findOne({ where: { courseId }, order: { order: 'DESC' } }); // NEW — find the current last module
+    const order = dto.order ?? (last ? last.order + 1 : 0); // NEW — auto-append. Before, every module got order 0, so their display order was undefined
+    const module = this.moduleRepo.create({ ...dto, courseId, order }); // build in memory
     return this.moduleRepo.save(module); // persist
   }
 
@@ -35,7 +37,9 @@ export class CourseContentService {
     const module = await this.moduleRepo.findOne({ where: { id: moduleId, courseId } }); // confirms the module belongs to THIS course, not some other one
     if (!module) throw new NotFoundException('Module not found in this course');
 
-    const lesson = this.lessonRepo.create({ ...dto, moduleId }); // build in memory
+    const last = await this.lessonRepo.findOne({ where: { moduleId }, order: { order: 'DESC' } }); // NEW — find the current last lesson
+    const order = dto.order ?? (last ? last.order + 1 : 0); // NEW — auto-append, so lessons always play in the order they were added
+    const lesson = this.lessonRepo.create({ ...dto, moduleId, order }); // build in memory
     return this.lessonRepo.save(lesson); // persist
   }
 

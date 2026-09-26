@@ -1,5 +1,5 @@
-import { IsString, IsNumber, Min, MinLength } from 'class-validator';
-import { ApiProperty } from '@nestjs/swagger';
+import { IsString, IsNumber, IsOptional, IsUrl, Min, MinLength, MaxLength } from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CreateCourseDto {
   @ApiProperty({ example: 'Intro to React' })
@@ -16,4 +16,10 @@ export class CreateCourseDto {
   @IsNumber()
   @Min(0)
   price!: number;
+
+  @ApiPropertyOptional({ example: 'http://localhost:3000/uploads/images/abc.jpg' }) // NEW — optional cover image, URL returned by POST /uploads/image
+  @IsOptional()
+  @IsUrl({ require_tld: false }) // require_tld:false so http://localhost:3000/... passes in development
+  @MaxLength(500)
+  coverImageUrl?: string;
 }

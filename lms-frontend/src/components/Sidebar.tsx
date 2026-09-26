@@ -1,4 +1,5 @@
 import { Link, useLocation } from 'react-router-dom'; // Link navigates, useLocation highlights the active item
+import { getRole } from '../lib/auth'; // NEW — used for the role label under the logo
 
 export interface SidebarItem { // one clickable link
   label: string;
@@ -17,6 +18,8 @@ interface SidebarProps {
 
 export default function Sidebar({ sections }: SidebarProps) {
   const location = useLocation(); // current URL path, used to mark the active link
+  const role = getRole();
+  const roleLabel = role === 'teacher' ? 'Instructor Studio' : role === 'admin' ? 'Admin Console' : null; // NEW — gives the teacher/admin portals their own identity; students keep the plain logo
 
   return (
     <aside className="w-60 min-h-screen bg-surface border-r border-border text-text flex flex-col fixed left-0 top-0 z-20 shadow-soft"> {/* soft-UI panel — raised white surface against the canvas bg */}
@@ -27,7 +30,10 @@ export default function Sidebar({ sections }: SidebarProps) {
           <div className="absolute h-7 w-7 rotate-45 rounded-lg border border-primary-600/60 bg-primary-100" /> {/* rotated diamond shape */}
           <span className="relative z-10 text-xs font-black text-primary-700">L</span> {/* letter mark on top */}
         </div>
-        <span className="text-lg font-bold">LMS<span className="text-primary-600">.</span></span> {/* wordmark with indigo dot accent */}
+        <div className="leading-tight"> {/* CHANGED — wordmark + optional role label stacked */}
+          <span className="text-lg font-bold">LMS<span className="text-primary-600">.</span></span> {/* wordmark with indigo dot accent */}
+          {roleLabel && <p className="text-[10px] font-semibold uppercase tracking-widest text-primary-600">{roleLabel}</p>}
+        </div>
       </div>
 
       <nav className="flex-1 px-3 py-6 overflow-y-auto"> {/* scrollable nav area */}

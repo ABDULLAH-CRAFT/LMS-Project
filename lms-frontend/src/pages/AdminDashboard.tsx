@@ -1,7 +1,7 @@
 // lms-frontend/src/pages/AdminDashboard.tsx
 import { useMemo, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Users, UserPlus, Mail, Lock, Search, CalendarDays, ShieldCheck } from 'lucide-react';
+import { Users, UserPlus, Mail, Lock, Search, CalendarDays, ShieldCheck, Trash2, X, Check } from 'lucide-react';
 import { api } from '../lib/axios';
 import DashboardLayout from '../components/DashboardLayout';
 import { adminSidebarSections } from '../config/adminSidebar';
@@ -30,6 +30,11 @@ export default function AdminDashboard() {
   const [errorMessage, setErrorMessage] = useState('');
   const [search, setSearch] = useState('');
 
+  // Which teacher row is showing the "are you sure?" confirm state, and any
+  // error from a failed delete attempt (e.g. teacher still owns courses).
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [deleteError, setDeleteError] = useState<{ id: string; message: string } | null>(null);
+
   const teachersQuery = useQuery({
     queryKey: ['teachers'],
     queryFn: async () => {
@@ -50,6 +55,28 @@ export default function AdminDashboard() {
     },
     onError: (error: any) => {
       setErrorMessage(error.response?.data?.message || 'Failed to create teacher');
+    },
+  });
+
+  const deleteTeacherMutation = useMutation({
+    mutationFn: async (teacherId: string) => {
+      const response = await api.delete(`/admin/teachers/${teacherId}`);
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['teachers'] });
+      setConfirmDeleteId(null);
+      setDeleteError(null);
+    },
+    onError: (error: any, teacherId) => {
+      // Most common case: 409 from the backend because the teacher still
+      // owns courses — surface that message right on the row, not a toast
+      // that disappears before they can read it.
+      setDeleteError({
+        id: teacherId,
+        message: error.response?.data?.message || 'Failed to delete teacher',
+      });
+      setConfirmDeleteId(null);
     },
   });
 
@@ -226,22 +253,72 @@ export default function AdminDashboard() {
               ))}
 
             {!teachersQuery.isLoading &&
-              filteredTeachers.map((teacher) => (
-                <div key={teacher.id} className="p-4 flex items-center gap-3 hover:bg-surface-strong/50 transition">
-                  <div
-                    className={`w-10 h-10 rounded-full bg-gradient-to-br ${avatarRamp(teacher.name)} flex items-center justify-center text-white text-sm font-semibold shrink-0`}
-                  >
-                    {teacher.name.charAt(0).toUpperCase()}
+              filteredTeachers.map((teacher) => {
+                const isConfirming = confirmDeleteId === teacher.id;
+                const rowError = deleteError?.id === teacher.id ? deleteError.message : null;
+                const isDeletingThis = deleteTeacherMutation.isPending && deleteTeacherMutation.variables === teacher.id;
+
+                return (
+                  <div key={teacher.id} className="hover:bg-surface-strong/50 transition">
+                    <div className="p-4 flex items-center gap-3">
+                      <div
+                        className={`w-10 h-10 rounded-full bg-gradient-to-br ${avatarRamp(teacher.name)} flex items-center justify-center text-white text-sm font-semibold shrink-0`}
+                      >
+                        {teacher.name.charAt(0).toUpperCase()}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-text truncate">{teacher.name}</p>
+                        <p className="text-xs text-muted truncate">{teacher.email}</p>
+                      </div>
+
+                      {!isConfirming ? (
+                        <>
+                          <span className="text-xs text-muted-dark shrink-0 bg-surface-strong rounded-full px-2.5 py-1">
+                            Joined {new Date(teacher.createdAt).toLocaleDateString()}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setDeleteError(null);
+                              setConfirmDeleteId(teacher.id);
+                            }}
+                            title="Remove teacher"
+                            className="w-8 h-8 rounded-full flex items-center justify-center text-muted hover:text-danger-600 hover:bg-danger-50 transition shrink-0"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </>
+                      ) : (
+                        <div className="flex items-center gap-2 shrink-0">
+                          <span className="text-xs font-medium text-danger-600">Remove {teacher.name}?</span>
+                          <button
+                            type="button"
+                            onClick={() => deleteTeacherMutation.mutate(teacher.id)}
+                            disabled={isDeletingThis}
+                            className="w-8 h-8 rounded-full flex items-center justify-center bg-danger-600 text-white hover:bg-danger-700 transition disabled:opacity-50"
+                            title="Confirm delete"
+                          >
+                            <Check className="w-4 h-4" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setConfirmDeleteId(null)}
+                            disabled={isDeletingThis}
+                            className="w-8 h-8 rounded-full flex items-center justify-center bg-surface-strong text-muted hover:text-text transition disabled:opacity-50"
+                            title="Cancel"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        </div>
+                      )}
+                    </div>
+
+                    {rowError && (
+                      <p className="text-danger-600 text-xs px-4 pb-3 -mt-1">{rowError}</p>
+                    )}
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-medium text-text truncate">{teacher.name}</p>
-                    <p className="text-xs text-muted truncate">{teacher.email}</p>
-                  </div>
-                  <span className="text-xs text-muted-dark shrink-0 bg-surface-strong rounded-full px-2.5 py-1">
-                    Joined {new Date(teacher.createdAt).toLocaleDateString()}
-                  </span>
-                </div>
-              ))}
+                );
+              })}
 
             {!teachersQuery.isLoading && filteredTeachers.length === 0 && teachers.length > 0 && (
               <p className="text-sm text-muted p-6 text-center">No teachers match "{search}".</p>

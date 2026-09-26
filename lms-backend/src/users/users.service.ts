@@ -1,4 +1,5 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common'; // NEW import — UnauthorizedException
+// lms-backend/src/users/users.service.ts
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
@@ -40,21 +41,26 @@ export class UsersService {
     return this.userRepo.save(user);
   }
 
-  async updateName(userId: string, name: string) { // NEW — updates just the name field
-    const user = await this.userRepo.findOne({ where: { id: userId } }); // fetch the current row first
-    if (!user) throw new UnauthorizedException('User not found'); // defensive — shouldn't happen since the JWT already proved they exist
-    user.name = name; // mutate the field in memory
-    return this.userRepo.save(user); // persist the change
+  async updateName(userId: string, name: string) {
+    const user = await this.userRepo.findOne({ where: { id: userId } });
+    if (!user) throw new UnauthorizedException('User not found');
+    user.name = name;
+    return this.userRepo.save(user);
   }
 
-  async updatePassword(userId: string, currentPassword: string, newPassword: string) { // NEW — changes the password after verifying the old one
+  async deleteById(userId: string) { // NEW — permanently removes the user row from the DB
+    const result = await this.userRepo.delete({ id: userId });
+    return (result.affected ?? 0) > 0; // true if a row was actually deleted, false if the id didn't exist
+  }
+
+  async updatePassword(userId: string, currentPassword: string, newPassword: string) {
     const user = await this.userRepo.findOne({ where: { id: userId } });
     if (!user) throw new UnauthorizedException('User not found');
 
-    const valid = await bcrypt.compare(currentPassword, user.passwordHash); // confirm they actually know the current password
-    if (!valid) throw new UnauthorizedException('Current password is incorrect'); // reject if it doesn't match — prevents someone with just a stolen token from silently taking over the account
+    const valid = await bcrypt.compare(currentPassword, user.passwordHash);
+    if (!valid) throw new UnauthorizedException('Current password is incorrect');
 
-    user.passwordHash = await bcrypt.hash(newPassword, 10); // hash and store the new password
+    user.passwordHash = await bcrypt.hash(newPassword, 10);
     await this.userRepo.save(user);
     return { message: 'Password updated successfully' };
   }
