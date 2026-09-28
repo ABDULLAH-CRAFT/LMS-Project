@@ -76,7 +76,7 @@ export default function StudentDashboard() {
   index={index}
   footer={
     <div className="flex items-center justify-between">
-      <span className="text-sm font-semibold text-text">${course.price}</span>
+      <span className="text-sm font-semibold text-text">₹{course.price}</span>
       <button
         onClick={(e) => {
           e.preventDefault(); // stop the card's own Link from navigating

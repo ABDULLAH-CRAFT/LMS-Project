@@ -1,4 +1,3 @@
-// lms-frontend/src/pages/AdminDashboard.tsx
 import { useMemo, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Users, UserPlus, Mail, Lock, Search, CalendarDays, ShieldCheck, Trash2, X, Check } from 'lucide-react';

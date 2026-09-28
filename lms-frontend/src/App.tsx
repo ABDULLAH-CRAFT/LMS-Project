@@ -1,4 +1,3 @@
-// lms-frontend/src/App.tsx
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { CartProvider } from './context/CartComtext';
@@ -22,7 +21,8 @@ import StudentAssignments from './pages/StudentAssignments';
 import StudentMessages from './pages/StudentMessages';
 import StudentSettings from './pages/StudentSettings';
 import Cart from './pages/Cart';
-import StudentCourseLearn from './pages/StudentCourseLearn';
+import StudentCourseLearn from './pages/StudentCourseLearn'; // NEW — add alongside the other page imports
+import TeacherDashboard from './pages/TeacherDashboard';
 const queryClient = new QueryClient();
 
 export default function App() {
@@ -63,7 +63,14 @@ export default function App() {
                 </ProtectedRoute>
               }
             />
-
+              <Route
+                path="/teacher"
+                element={
+                  <ProtectedRoute allowedRoles={['teacher']}>
+                    <TeacherDashboard />
+                  </ProtectedRoute>
+                }
+              />
             <Route
               path="/teacher/drafts"
               element={
@@ -105,6 +112,7 @@ export default function App() {
                 </ProtectedRoute>
               }
             />
+            {/* NEW — add this Route inside <Routes>, near the other /student/... routes */}
             <Route
               path="/student/courses/:id/learn"
               element={

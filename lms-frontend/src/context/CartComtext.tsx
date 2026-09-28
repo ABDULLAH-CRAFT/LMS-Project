@@ -2,7 +2,6 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from '
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import type { Course } from '../types/course';
 import { getCart, addCartItem, removeCartItem } from '../lib/api/cart';
-import { getRole } from '../lib/auth'; // NEW
 
 interface CartContextValue {
   items: Course[];
@@ -17,10 +16,8 @@ interface CartContextValue {
 const CartContext = createContext<CartContextValue | undefined>(undefined);
 const CART_QUERY_KEY = ['cart'];
 
-// CHANGED — the cart only exists for students. Before, ANY logged-in user (teacher, admin) triggered a
-// GET /cart, which the backend correctly rejects with 403 for non-students.
-function isStudentSession() {
-  return getRole() === 'student';
+function hasToken() {
+  return !!localStorage.getItem('accessToken');
 }
 
 export function CartProvider({ children }: { children: ReactNode }) {
@@ -31,9 +28,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
   // context, so we listen for a custom event dispatched on login/logout —
   // see the 'auth-changed' dispatches added to login.tsx, Register.tsx,
   // Navbar.tsx and StudentSettings.tsx.)
-  const [authed, setAuthed] = useState(isStudentSession()); // "authed" now means "logged in as a student"
+  const [authed, setAuthed] = useState(hasToken());
   useEffect(() => {
-    const handler = () => setAuthed(isStudentSession());
+    const handler = () => setAuthed(hasToken());
     window.addEventListener('auth-changed', handler);
     return () => window.removeEventListener('auth-changed', handler);
   }, []);
@@ -47,7 +44,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const { data: items = [], isLoading } = useQuery({
     queryKey: CART_QUERY_KEY,
     queryFn: getCart,
-    enabled: authed, // guests, teachers and admins never hit the (student-only) cart endpoint
+    enabled: authed, // guest/logged-out pages never hit the (protected) cart endpoint
     staleTime: 30_000,
   });
 

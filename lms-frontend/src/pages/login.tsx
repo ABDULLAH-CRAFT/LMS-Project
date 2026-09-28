@@ -51,7 +51,7 @@ export default function LoginPage() {
       if (payload.role === 'admin') {
         navigate('/admin');
       } else if (payload.role === 'teacher') {
-        navigate('/teacher'); // CHANGED — teachers now land on their own Overview page
+        navigate('/teacher');
       } else {
         navigate('/student');
       }

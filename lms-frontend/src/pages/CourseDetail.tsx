@@ -5,9 +5,6 @@ import { api } from '../lib/axios';
 import type { Course } from '../types/course';
 import type { CourseModuleWithLessons } from '../types/courseContent';
 import { usePayCart } from '../hooks/usePayCard';
-import LessonVideo from '../components/LessonVideo'; // NEW — plays uploaded videos + YouTube/Vimeo links
-import { useCurrentUser } from '../hooks/useCurrentUser'; // NEW
-import { getRole, homePathForRole } from '../lib/auth'; // NEW
 
 export default function CourseDetail() {
   const payMutation=usePayCart()
@@ -15,9 +12,6 @@ export default function CourseDetail() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [expandedLessonId, setExpandedLessonId] = useState<string | null>(null);
-  const role = getRole(); // NEW
-  const isStaffPreview = role === 'teacher' || role === 'admin'; // NEW — teachers/admins look at this page as a PREVIEW: no buying, all lessons open
-  const { data: currentUser } = useCurrentUser(); // NEW — to know if this teacher owns the course
 
   const courseQuery = useQuery({
     queryKey: ['course', id],
@@ -43,7 +37,7 @@ export default function CourseDetail() {
       const response = await api.get<{ enrolled: boolean }>(`/enrollments/check/${id}`);
       return response.data;
     },
-    enabled: !!id && role === 'student', // CHANGED — only students can be enrolled; teachers/guests used to trigger a rejected request here
+    enabled: !!id,
     retry: false,
   });
 
@@ -69,8 +63,8 @@ export default function CourseDetail() {
     return (
       <div className="min-h-screen bg-background flex flex-col items-center justify-center gap-3"> {/* CHANGED — dark bg */}
         <p className="text-muted">Course not found.</p>
-        <Link to={homePathForRole(getRole()) === '/login' ? '/student' : homePathForRole(getRole())} className="text-sm font-medium text-primary-600 hover:text-primary-700"> {/* CHANGED — purple link; role-aware */}
-          ← Back
+        <Link to="/student" className="text-sm font-medium text-primary-600 hover:text-primary-700"> {/* CHANGED — purple link */}
+          ← Back to catalog
         </Link>
       </div>
     );
@@ -78,14 +72,11 @@ export default function CourseDetail() {
 
   const course = courseQuery.data;
   const isEnrolled = enrollmentCheckQuery.data?.enrolled ?? false;
-  const canViewLessons = isEnrolled || isStaffPreview; // NEW
-  const isOwner = role === 'teacher' && currentUser?.id === course.teacherId; // NEW
-  const backTo = role === 'student' || !role ? '/student' : homePathForRole(role); // NEW — teachers go back to THEIR dashboard, not the student catalog
   const totalLessons = curriculumQuery.data?.reduce((sum, m) => sum + m.lessons.length, 0) ?? 0;
 
   function renderLessonContent(contentType: string, content: string) {
     if (contentType === 'video') {
-      return <LessonVideo url={content} />; // CHANGED — was a plain link; now an inline player (uploaded file, YouTube or Vimeo)
+      return <a href={content} target="_blank" rel="noopener noreferrer" className="text-sm text-secondary-600 hover:underline break-all">{content}</a>; // CHANGED — cyan link fits the dark palette better than indigo
     }
     return <p className="text-sm text-muted leading-relaxed whitespace-pre-wrap">{content}</p>; // CHANGED — lighter gray for readability on dark bg
   }
@@ -100,28 +91,13 @@ export default function CourseDetail() {
 
       <div className="max-w-3xl mx-auto px-6 py-10 relative z-10"> {/* z-10 above the glow */}
 
-        <Link to={backTo} className="text-sm text-muted hover:text-text transition mb-6 inline-block"> {/* CHANGED — role-aware back link */}
-          ← {role === 'student' || !role ? 'Back to catalog' : 'Back to dashboard'}
+        <Link to="/student" className="text-sm text-muted hover:text-text transition mb-6 inline-block"> {/* CHANGED — dark-theme hover */}
+          ← Back to catalog
         </Link>
 
-        {isStaffPreview && ( // NEW — makes it obvious this is a preview, not the student purchase page
-          <div className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-primary-50 border border-primary-200 px-5 py-3 text-sm text-primary-700">
-            <span>👀 Preview — this is how students see this course. {course.status === 'draft' ? 'It is still a draft, so students cannot see it yet.' : ''}</span>
-            {isOwner && (
-              <Link to={`/teacher/courses/${course.id}/edit`} className="font-semibold underline underline-offset-2">
-                Edit course
-              </Link>
-            )}
-          </div>
-        )}
-
         <div className="bg-surface rounded-2xl overflow-hidden shadow-soft mb-6"> {/* CHANGED — glass card */}
-          <div className="relative h-48 sm:h-64 bg-gradient-to-br from-primary-600 to-secondary-500 flex items-center justify-center overflow-hidden"> {/* CHANGED — theme gradient instead of indigo/blue */}
-            {course.coverImageUrl ? ( // NEW — the teacher's uploaded cover
-              <img src={course.coverImageUrl} alt="" className="absolute inset-0 h-full w-full object-cover" />
-            ) : (
-              <span className="text-6xl font-bold text-white">{course.title.charAt(0).toUpperCase()}</span>
-            )}
+          <div className="h-48 bg-gradient-to-br from-primary-600 to-secondary-500 flex items-center justify-center"> {/* CHANGED — theme gradient instead of indigo/blue */}
+            <span className="text-6xl font-bold text-white">{course.title.charAt(0).toUpperCase()}</span>
           </div>
 
           <div className="p-8">
@@ -135,11 +111,9 @@ export default function CourseDetail() {
             )}
 
             <div className="flex items-center justify-between border-t border-border pt-6"> {/* CHANGED — dark divider */}
-              <span className="text-2xl font-bold text-text">${course.price}</span> {/* CHANGED — white price */}
+              <span className="text-2xl font-bold text-text">₹{course.price}</span> {/* CHANGED — white price */}
 
-              {isStaffPreview ? (
-                <span className="text-xs text-muted">Enrollment is for students only.</span> // NEW — no buy button for teachers/admins
-              ) : isEnrolled ? (
+              {isEnrolled ? (
                 <span className="bg-secondary-500/10 border border-secondary-500/30 text-secondary-600 px-6 py-3 rounded-full text-sm font-medium"> {/* CHANGED — glass green badge */}
                   ✓ Enrolled
                 </span>
@@ -192,16 +166,16 @@ export default function CourseDetail() {
                       <div key={lesson.id}>
                         <button
                           onClick={() => {
-                            if (!canViewLessons) return;
+                            if (!isEnrolled) return;
                             setExpandedLessonId(expandedLessonId === lesson.id ? null : lesson.id);
                           }}
                           className={
-                            canViewLessons
+                            isEnrolled
                               ? 'w-full flex items-center gap-2 text-sm px-3 py-2 rounded-lg text-left transition text-muted-dark hover:bg-surface cursor-pointer' // CHANGED — light-on-dark, subtle hover
                               : 'w-full flex items-center gap-2 text-sm px-3 py-2 rounded-lg text-left transition text-muted cursor-not-allowed' // CHANGED — dimmer for locked state
                           }
                         >
-                          {canViewLessons ? (
+                          {isEnrolled ? (
                             <svg className="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
                             </svg>
@@ -214,7 +188,7 @@ export default function CourseDetail() {
                           <span className="text-xs uppercase text-muted">{lesson.contentType}</span> {/* CHANGED — muted badge */}
                         </button>
 
-                        {expandedLessonId === lesson.id && canViewLessons && (
+                        {expandedLessonId === lesson.id && isEnrolled && (
                           <div className="px-3 pb-3 pl-9">
                             {renderLessonContent(lesson.contentType, lesson.content)}
                           </div>
@@ -230,7 +204,7 @@ export default function CourseDetail() {
               ))}
             </div>
 
-            {!canViewLessons && (
+            {!isEnrolled && (
               <div className="px-6 py-4 bg-surface text-center"> {/* CHANGED — subtle glass footer strip */}
                 <p className="text-xs text-muted">Enroll to unlock all lesson content.</p>
               </div>

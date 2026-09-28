@@ -5,7 +5,6 @@ import { api } from '../lib/axios';
 import type { Course } from '../types/course';
 import type { CourseModuleWithLessons } from '../types/courseContent';
 import type { CourseProgress } from '../types/progress';
-import LessonVideo from '../components/LessonVideo'; // NEW
 
 export default function StudentCourseLearn() {
   const { id: courseId } = useParams<{ id: string }>();
@@ -151,9 +150,11 @@ export default function StudentCourseLearn() {
           {currentLesson && (
             <div className="max-w-3xl">
               {currentLesson.contentType === 'video' ? (
-                <LessonVideo // CHANGED — was a bare <video>, which can't play YouTube/Vimeo links a teacher may have pasted. Uploaded files still auto-complete on end.
+                <video
                   key={currentLesson.id}
-                  url={currentLesson.content}
+                  controls
+                  className="w-full rounded-2xl bg-black shadow-soft"
+                  src={currentLesson.content}
                   onEnded={() => completeMutation.mutate(currentLesson.id)}
                 />
               ) : (

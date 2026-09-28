@@ -168,7 +168,7 @@ export default function Checkout() {
               {items.length} {items.length === 1 ? 'Course' : 'Courses'} in bundle
             </p>
           </div>
-          <span className="text-sm font-bold text-text">${total}</span>
+          <span className="text-sm font-bold text-text">₹{total}</span>
           <ChevronDown
             className={`w-4 h-4 text-muted transition-transform ${summaryOpen ? 'rotate-180' : ''}`}
           />
@@ -180,7 +180,7 @@ export default function Checkout() {
               <div key={course.id} className="flex items-center justify-between text-sm gap-3">
                 <span className="text-text truncate flex-1">{course.title}</span>
                 <span className="text-muted shrink-0">
-                  {Number(course.price) <= 0 ? 'Free' : `$${course.price}`}
+                  {Number(course.price) <= 0 ? 'Free' : `₹${course.price}`}
                 </span>
                 <button
                   onClick={() => removeFromCart(course.id)}
@@ -332,7 +332,7 @@ export default function Checkout() {
         <div className="max-w-lg mx-auto px-5 py-4 flex items-center justify-between gap-4">
           <div>
             <p className="text-[11px] text-muted">TOTAL</p>
-            <p className="text-lg font-bold text-text">${total}</p>
+            <p className="text-lg font-bold text-text">₹{total}</p>
           </div>
           <button
             onClick={handlePlaceOrder}

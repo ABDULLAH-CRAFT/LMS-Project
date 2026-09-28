@@ -1,7 +1,6 @@
-// lms-frontend/src/pages/AdminCourses.tsx
 import { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { BookOpen, Search, CircleDot, CheckCircle2 } from 'lucide-react';
+import { BookOpen, Search, CircleDot, CheckCircle2, Users } from 'lucide-react';
 import { api } from '../lib/axios';
 import DashboardLayout from '../components/DashboardLayout';
 import { adminSidebarSections } from '../config/adminSidebar';
@@ -11,6 +10,7 @@ import type { Course } from '../types/course';
 // created it (name/email only, never the password hash).
 interface AdminCourse extends Course {
   teacher: { id: string; name: string; email: string } | null;
+  studentCount: number; // how many students are enrolled in this course
 }
 
 const AVATAR_RAMPS = [
@@ -169,6 +169,14 @@ export default function AdminCourses() {
                     )}
                   </div>
                 </div>
+
+                <span
+                  className="hidden sm:flex items-center gap-1.5 text-xs text-muted-dark shrink-0 bg-surface-strong rounded-full px-2.5 py-1"
+                  title="Enrolled students"
+                >
+                  <Users className="w-3.5 h-3.5" />
+                  {course.studentCount} {course.studentCount === 1 ? 'student' : 'students'}
+                </span>
 
                 <span
                   className={[
