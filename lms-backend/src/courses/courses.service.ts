@@ -1,4 +1,4 @@
-import { Injectable, ForbiddenException, NotFoundException, ConflictException } from '@nestjs/common';
+import { Injectable, ForbiddenException, NotFoundException, ConflictException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, ILike, In } from 'typeorm';
 import { Course, CourseStatus } from 'src/entities/course.entity';
@@ -76,6 +76,15 @@ export class CoursesService {
     if (course.teacherId !== teacherId) {
       throw new ForbiddenException('You do not own this course');
     }
+
+    // A course with no lessons has nothing for students to learn — block publishing it.
+    const modules = await this.moduleRepo.find({ where: { courseId: id }, select: { id: true } });
+    const lessonCount =
+      modules.length > 0 ? await this.lessonRepo.count({ where: { moduleId: In(modules.map((m) => m.id)) } }) : 0;
+    if (lessonCount === 0) {
+      throw new BadRequestException('Add at least one lesson before publishing this course');
+    }
+
     course.status = CourseStatus.PUBLISHED;
     return this.courseRepo.save(course);
   }

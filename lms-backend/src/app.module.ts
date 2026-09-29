@@ -16,6 +16,7 @@ import { UploadsModule } from './uploads/uploads.module';
 import { ProgressModule } from './progress/progress.module';
 import { LessonResourcesModule } from './lesson-resources/lesson-resources.module';
 import { AssignmentsModule } from './assignments/assignments.module';
+import { SubmissionsModule } from './submissions/submissions.module';
 
 @Module({
   imports: [
@@ -49,6 +50,7 @@ import { AssignmentsModule } from './assignments/assignments.module';
     ProgressModule,
     LessonResourcesModule,
     AssignmentsModule,
+    SubmissionsModule,
   ],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
 })

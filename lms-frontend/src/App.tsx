@@ -24,6 +24,7 @@ import Cart from './pages/Cart';
 import StudentCourseLearn from './pages/StudentCourseLearn'; // NEW — add alongside the other page imports
 import TeacherDashboard from './pages/TeacherDashboard';
 const queryClient = new QueryClient();
+import TeacherSubmissions from './pages/TeacherSubmissions';
 
 export default function App() {
   return (
@@ -100,6 +101,15 @@ export default function App() {
               element={
                 <ProtectedRoute allowedRoles={['teacher']}>
                   <TeacherCourseEditor />
+                </ProtectedRoute>
+              }
+            />
+
+              <Route
+              path="/teacher/courses/:id/submissions"
+              element={
+                <ProtectedRoute allowedRoles={['teacher']}>
+                  <TeacherSubmissions />
                 </ProtectedRoute>
               }
             />

@@ -17,6 +17,7 @@ export default function TeacherDrafts() {
   const [editingCourse, setEditingCourse] = useState<Course | null>(null); // course open in the edit modal
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null); // row showing the "delete?" confirm
   const [deleteError, setDeleteError] = useState<{ id: string; message: string } | null>(null);
+  const [publishError, setPublishError] = useState<{ id: string; message: string } | null>(null);
 
   const coursesQuery = useQuery({
     queryKey: ['my-courses'],
@@ -46,8 +47,15 @@ export default function TeacherDrafts() {
       return response.data;
     },
     onSuccess: () => {
+      setPublishError(null);
       queryClient.invalidateQueries({ queryKey: ['my-courses'] });
       queryClient.invalidateQueries({ queryKey: ['teacher-overview'] });
+    },
+    onError: (error: any, courseId) => {
+      setPublishError({
+        id: courseId,
+        message: error.response?.data?.message || 'Failed to publish course',
+      });
     },
   });
 
@@ -165,7 +173,10 @@ export default function TeacherDrafts() {
                     </Link>
                     <button
                       type="button"
-                      onClick={() => publishMutation.mutate(course.id)}
+                        onClick={() => {
+                        setPublishError(null);
+                        publishMutation.mutate(course.id);
+                      }}
                       disabled={publishMutation.isPending}
                       className="text-xs bg-gradient-to-r from-primary-600 to-secondary-400 text-white px-3 py-1.5 rounded-full disabled:opacity-50"
                     >
@@ -209,6 +220,9 @@ export default function TeacherDrafts() {
               </div>
 
               {rowError && <p className="text-danger-600 text-xs px-4 pb-3 -mt-1">{rowError}</p>}
+              {publishError?.id === course.id && (
+                <p className="text-danger-600 text-xs px-4 pb-3 -mt-1">{publishError.message}</p>
+              )}
             </div>
           );
         })}

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '../lib/axios';
 import type { Assignment } from '../types/courseContent';
+import { Link } from 'react-router-dom';
 
 interface LessonAssignmentsProps {
   courseId: string;
@@ -186,6 +187,12 @@ export default function LessonAssignments({ courseId, lessonId }: LessonAssignme
                     )}
                   </div>
                   <div className="flex gap-3 whitespace-nowrap">
+                  <Link
+                      to={`/teacher/courses/${courseId}/submissions?assignment=${assignment.id}`}
+                      className="text-primary-600 hover:text-primary-700"
+                    >
+                      Submissions
+                    </Link>
                     <button
                       onClick={() => openEditForm(assignment)}
                       className="text-primary-600 hover:text-primary-700"
