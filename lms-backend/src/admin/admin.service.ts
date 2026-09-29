@@ -1,8 +1,7 @@
-// lms-backend/src/admin/admin.service.ts
-import { Injectable, ConflictException, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, ConflictException, NotFoundException, BadRequestException } from '@nestjs/common'; // CHANGED — added NotFoundException, BadRequestException
 import { UsersService } from '../users/users.service';
 import { MailService } from '../mail/mail.service';
-import { CoursesService } from '../courses/courses.service';
+import { CoursesService } from '../courses/courses.service'; // NEW — needed to check for courses before deleting a teacher
 import { UserRole } from '../users/entities/user.entity';
 import { CreateTeacherDto } from './create-teacher.dto';
 
@@ -11,18 +10,18 @@ export class AdminService {
   constructor(
     private usersService: UsersService,
     private mailService: MailService,
-    private coursesService: CoursesService,
+    private coursesService: CoursesService, // NEW
   ) {}
 
   async createTeacher(dto: CreateTeacherDto) {
     const existing = await this.usersService.findByEmail(dto.email);
     if (existing) throw new ConflictException('Email already in use');
 
-    const teacher = await this.usersService.createWithHashedPassword({
+    const teacher = await this.usersService.createWithHashedPassword({ // CHANGED — was manual bcrypt.hash + usersService.create
       email: dto.email,
       password: dto.password,
       name: dto.name,
-      role: UserRole.TEACHER,
+      role: UserRole.TEACHER, // still the only place this role gets assigned
     });
 
     await this.mailService.sendTeacherInviteEmail(teacher.email, teacher.name, dto.password);
@@ -34,13 +33,17 @@ export class AdminService {
     return teachers.map(({ passwordHash, ...safeTeacher }) => safeTeacher);
   }
 
-  async deleteTeacher(teacherId: string) {
+  async deleteTeacher(teacherId: string) { // NEW — permanently deletes a teacher account
     const teacher = await this.usersService.findById(teacherId);
     if (!teacher) throw new NotFoundException('Teacher not found');
     if (teacher.role !== UserRole.TEACHER) {
+      // stops this endpoint from being (ab)used to delete admins or students
       throw new BadRequestException('This account is not a teacher');
     }
 
+    // courses.teacherId has no ON DELETE CASCADE, so deleting a teacher who
+    // still owns courses would otherwise fail with a raw foreign-key error.
+    // Check first and give a clear, actionable message instead.
     const ownedCourses = await this.coursesService.findByTeacher(teacherId);
     if (ownedCourses.length > 0) {
       throw new ConflictException(

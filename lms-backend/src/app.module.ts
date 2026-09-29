@@ -12,7 +12,7 @@ import { EnrollmentsModule } from './enrollments/enrollments.module';
 import { CourseContentModule } from './course-content/course-content.module';
 import { CartModule } from './cart/cart.module';
 import { NotificationSettingsModule } from './notification-settings/notification-settings.module';
-import { UploadsModule } from './uploads/uploads.module'; // NEW
+import { UploadsModule } from './uploads/uploads.module';
 import { ProgressModule } from './progress/progress.module';
 
 @Module({

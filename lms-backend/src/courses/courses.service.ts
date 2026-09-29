@@ -1,29 +1,28 @@
-// lms-backend/src/courses/courses.service.ts
-import { Injectable, ForbiddenException, NotFoundException } from '@nestjs/common';
+import { Injectable, ForbiddenException, NotFoundException, ConflictException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, ILike } from 'typeorm';
+import { Repository, ILike, In } from 'typeorm';
 import { Course, CourseStatus } from 'src/entities/course.entity';
-import { Enrollment } from 'src/enrollments/entities/enrollment.entity'; // NEW — for student counts
-import { CourseModule as CourseModuleEntity } from 'src/course-content/entities/course-module.entity'; // NEW — for lesson counts (aliased — clashes with Nest's own @Module concept otherwise)
-import { Lesson } from 'src/course-content/entities/lesson.entity'; // NEW — for lesson counts
+import { Enrollment } from 'src/enrollments/entities/enrollment.entity';
+import { CourseModule as CourseModuleEntity } from 'src/course-content/entities/course-module.entity';
+import { Lesson } from 'src/course-content/entities/lesson.entity';
 import { CreateCourseDto } from './dto/create-course.dto';
-import { UpdateCourseDto } from './dto/update-course.dto'; // NEW
+import { UpdateCourseDto } from './dto/update-course.dto';
 
 @Injectable()
 export class CoursesService {
   constructor(
     @InjectRepository(Course) private courseRepo: Repository<Course>,
-    @InjectRepository(Enrollment) private enrollmentRepo: Repository<Enrollment>, // NEW — read-only here, just for counts
-    @InjectRepository(CourseModuleEntity) private moduleRepo: Repository<CourseModuleEntity>, // NEW
-    @InjectRepository(Lesson) private lessonRepo: Repository<Lesson>, // NEW
+    @InjectRepository(Enrollment) private enrollmentRepo: Repository<Enrollment>,
+    @InjectRepository(CourseModuleEntity) private moduleRepo: Repository<CourseModuleEntity>,
+    @InjectRepository(Lesson) private lessonRepo: Repository<Lesson>,
   ) {}
 
-  async create(teacherId: string, dto: CreateCourseDto) {
+  async create(teacherId: string, dto: CreateCourseDto) { // teacherId comes from the JWT, never from the request body
     const course = this.courseRepo.create({ ...dto, teacherId });
     return this.courseRepo.save(course);
   }
 
-  findPublished(search?: string) {
+  findPublished(search?: string) { // used by the student catalog — only ever returns published courses
     const trimmed = search?.trim();
     return this.courseRepo.find({
       where: {
@@ -34,18 +33,36 @@ export class CoursesService {
     });
   }
 
-  findByTeacher(teacherId: string) {
+  findByTeacher(teacherId: string) { // includes drafts, since it's the teacher's own view
     return this.courseRepo.find({
       where: { teacherId },
       order: { createdAt: 'DESC' },
     });
   }
 
-  findAllWithTeacher() {
-    return this.courseRepo.find({
+  async findAllWithTeacher() { // admin course list: every course, its teacher, and its enrolled-student count
+    const courses = await this.courseRepo.find({
       relations: { teacher: true },
       order: { createdAt: 'DESC' },
     });
+
+    if (courses.length === 0) return [];
+
+    const courseIds = courses.map((c) => c.id);
+    const enrollmentCounts = await this.enrollmentRepo
+      .createQueryBuilder('enrollment')
+      .select('enrollment.courseId', 'courseId')
+      .addSelect('COUNT(*)', 'count')
+      .where('enrollment.courseId IN (:...courseIds)', { courseIds })
+      .groupBy('enrollment.courseId')
+      .getRawMany<{ courseId: string; count: string }>();
+
+    const studentCountByCourse = new Map(enrollmentCounts.map((row) => [row.courseId, Number(row.count)]));
+
+    return courses.map((course) => ({
+      ...course,
+      studentCount: studentCountByCourse.get(course.id) ?? 0,
+    }));
   }
 
   async findOne(id: string) {
@@ -63,16 +80,14 @@ export class CoursesService {
     return this.courseRepo.save(course);
   }
 
-  async update(id: string, teacherId: string, dto: UpdateCourseDto) { // NEW — edits title/description/price/cover image, ownership-checked
-    const course = await this.findOne(id); // 404 if it doesn't exist at all
-    if (course.teacherId !== teacherId) { // same ownership rule as publish() — teacher A can't edit teacher B's course
+  async update(id: string, teacherId: string, dto: UpdateCourseDto) {
+    const course = await this.findOne(id);
+    if (course.teacherId !== teacherId) {
       throw new ForbiddenException('You do not own this course');
     }
 
-    // Only apply fields that were actually sent — undefined means "leave as
-    // is". coverImageUrl is the one exception: an explicit `null` is a real
-    // instruction to clear the cover image, not "field omitted", so it's
-    // checked separately rather than folded into the general spread.
+    // Only apply fields that were actually sent. coverImageUrl is checked
+    // separately because an explicit `null` means "clear the cover image".
     if (dto.title !== undefined) course.title = dto.title;
     if (dto.description !== undefined) course.description = dto.description;
     if (dto.price !== undefined) course.price = dto.price;
@@ -81,7 +96,39 @@ export class CoursesService {
     return this.courseRepo.save(course);
   }
 
-  async getTeacherOverview(teacherId: string) { // NEW — teacher dashboard data: their courses + per-course counts + totals
+  async remove(id: string, teacherId: string) { // NEW — permanently deletes a DRAFT course and its modules/lessons, ownership-checked
+    const course = await this.findOne(id);
+    if (course.teacherId !== teacherId) {
+      throw new ForbiddenException('You do not own this course');
+    }
+    if (course.status !== CourseStatus.DRAFT) {
+      // published courses may have students/payments attached — never hard-delete those
+      throw new ConflictException('Only draft courses can be deleted');
+    }
+
+    // Defensive: a draft shouldn't have enrollments, but if one somehow does,
+    // refuse rather than orphan it.
+    const enrollmentCount = await this.enrollmentRepo.count({ where: { courseId: id } });
+    if (enrollmentCount > 0) {
+      throw new ConflictException('This course has enrolled students and cannot be deleted');
+    }
+
+    // lessons -> modules -> course have no ON DELETE CASCADE, so they are
+    // removed child-first inside one transaction. cart_items cascade on their own.
+    await this.courseRepo.manager.transaction(async (em) => {
+      const modules = await em.find(CourseModuleEntity, { where: { courseId: id }, select: { id: true } });
+      const moduleIds = modules.map((m) => m.id);
+      if (moduleIds.length > 0) {
+        await em.delete(Lesson, { moduleId: In(moduleIds) });
+        await em.delete(CourseModuleEntity, { courseId: id });
+      }
+      await em.delete(Course, { id });
+    });
+
+    return { message: `Deleted draft course "${course.title}"` };
+  }
+
+  async getTeacherOverview(teacherId: string) { // teacher dashboard data: their courses + per-course counts + totals
     const courses = await this.findByTeacher(teacherId);
     if (courses.length === 0) {
       return { courses: [], totals: { totalCourses: 0, totalStudents: 0, totalLessons: 0 } };
@@ -89,8 +136,6 @@ export class CoursesService {
 
     const courseIds = courses.map((c) => c.id);
 
-    // One grouped query for enrollment counts per course, instead of N
-    // separate COUNT queries (one per course) inside a loop.
     const enrollmentCounts = await this.enrollmentRepo
       .createQueryBuilder('enrollment')
       .select('enrollment.courseId', 'courseId')
@@ -99,9 +144,7 @@ export class CoursesService {
       .groupBy('enrollment.courseId')
       .getRawMany<{ courseId: string; count: string }>();
 
-    // Lessons don't store courseId directly — they belong to a module, which
-    // belongs to a course — so this counts lessons via a join through
-    // course_modules rather than a direct where clause.
+    // Lessons belong to a module, which belongs to a course, so count via a join.
     const lessonCounts = await this.lessonRepo
       .createQueryBuilder('lesson')
       .innerJoin(CourseModuleEntity, 'module', 'module.id = lesson.moduleId')
@@ -120,8 +163,7 @@ export class CoursesService {
       lessonCount: lessonCountByCourse.get(course.id) ?? 0,
     }));
 
-    // Distinct students, not summed enrollments — a student enrolled in 3 of
-    // this teacher's courses should count once, not three times.
+    // Distinct students: one enrolled in 3 of this teacher's courses counts once.
     const distinctStudents = await this.enrollmentRepo
       .createQueryBuilder('enrollment')
       .select('DISTINCT enrollment.studentId', 'studentId')

@@ -1,4 +1,3 @@
-// lms-backend/src/courses/dto/update-course.dto.ts
 import { IsString, IsNumber, IsOptional, Min, MinLength } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 
