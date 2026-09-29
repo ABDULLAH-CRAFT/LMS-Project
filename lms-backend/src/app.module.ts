@@ -17,6 +17,8 @@ import { ProgressModule } from './progress/progress.module';
 import { LessonResourcesModule } from './lesson-resources/lesson-resources.module';
 import { AssignmentsModule } from './assignments/assignments.module';
 import { SubmissionsModule } from './submissions/submissions.module';
+import { AnnouncementsModule } from './announcements/announcements.module';
+import { TeacherInsightsModule } from './teacher-insights/teacher-insights.module';
 
 @Module({
   imports: [
@@ -51,6 +53,8 @@ import { SubmissionsModule } from './submissions/submissions.module';
     LessonResourcesModule,
     AssignmentsModule,
     SubmissionsModule,
+    AnnouncementsModule,
+    TeacherInsightsModule,
   ],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
 })

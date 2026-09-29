@@ -25,6 +25,10 @@ import StudentCourseLearn from './pages/StudentCourseLearn'; // NEW — add alon
 import TeacherDashboard from './pages/TeacherDashboard';
 const queryClient = new QueryClient();
 import TeacherSubmissions from './pages/TeacherSubmissions';
+import TeacherCourseStudents from './pages/TeacherCourseStudents';
+import TeacherAnnouncements from './pages/TeacherAnnouncements';
+import TeacherEarnings from './pages/TeacherEarnings';
+import StudentAnnouncements from './pages/StudentAnnouncements';
 
 export default function App() {
   return (
@@ -113,6 +117,30 @@ export default function App() {
                 </ProtectedRoute>
               }
             />
+                        <Route
+              path="/teacher/courses/:id/students"
+              element={
+                <ProtectedRoute allowedRoles={['teacher']}>
+                  <TeacherCourseStudents />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/teacher/announcements"
+              element={
+                <ProtectedRoute allowedRoles={['teacher']}>
+                  <TeacherAnnouncements />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/teacher/earnings"
+              element={
+                <ProtectedRoute allowedRoles={['teacher']}>
+                  <TeacherEarnings />
+                </ProtectedRoute>
+              }
+            />
 
             <Route
               path="/student"
@@ -152,6 +180,14 @@ export default function App() {
               element={
                 <ProtectedRoute allowedRoles={['student']}>
                   <StudentAssignments />
+                </ProtectedRoute>
+              }
+            />
+                        <Route
+              path="/student/announcements"
+              element={
+                <ProtectedRoute allowedRoles={['student']}>
+                  <StudentAnnouncements />
                 </ProtectedRoute>
               }
             />

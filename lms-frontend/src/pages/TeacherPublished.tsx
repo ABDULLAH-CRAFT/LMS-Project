@@ -44,6 +44,12 @@ export default function TeacherPublished() {
               >
                 <Pencil className="w-4 h-4" />
               </button>
+              <Link to={`/teacher/courses/${course.id}/students`} className="text-xs text-muted hover:text-text transition px-1">
+                Students
+              </Link>
+              <Link to={`/teacher/announcements?course=${course.id}`} className="text-xs text-muted hover:text-text transition px-1">
+                Announce
+              </Link>
               <Link to={`/teacher/courses/${course.id}/edit`} className="text-xs text-muted hover:text-text transition px-1">
                 Manage content
               </Link>

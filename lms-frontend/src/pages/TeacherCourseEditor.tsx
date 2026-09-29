@@ -273,6 +273,12 @@ export default function TeacherCourseEditor() {
         </div>
         <div className="flex items-center gap-3 shrink-0">
           <Link
+            to={`/teacher/courses/${courseId}/students`}
+            className="text-xs font-medium text-primary-600 hover:text-primary-700"
+          >
+            Students
+          </Link>
+          <Link
             to={`/teacher/courses/${courseId}/submissions`}
             className="text-xs font-medium text-primary-600 hover:text-primary-700"
           >
