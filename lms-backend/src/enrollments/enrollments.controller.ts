@@ -10,6 +10,7 @@ import { EnrollmentsService } from './enrollments.service';
 import { CheckoutCartDto } from './dto/checkout-cart.dto';
 import { VerifyPaymentDto } from 'src/payment/dto/verify-payment.dto';
 import { PaymentsService } from 'src/payment/payments.service';
+import { RefundService } from 'src/payment/refund.service';
 
 @ApiTags('Enrollments')
 @Controller('enrollments')
@@ -17,6 +18,7 @@ export class EnrollmentsController {
   constructor(
     private enrollmentsService: EnrollmentsService,
     private paymentsService: PaymentsService,
+    private refundService: RefundService, // R3
   ) {}
 
   @Post('checkout')
@@ -37,10 +39,10 @@ export class EnrollmentsController {
     return this.enrollmentsService.confirmCart(req.user.userId, dto);
   }
 
-  // No JWT guard — Razorpay calls this server-to-server. Trust comes from
+  // No JWT guard - Razorpay calls this server-to-server. Trust comes from
   // the signature check below, not a bearer token.
   @Post('webhook/razorpay')
-  @ApiExcludeEndpoint() // keep it out of the public Swagger docs
+  @ApiExcludeEndpoint()
   async razorpayWebhook(@Req() req: RawBodyRequest<Request>) {
     const signature = req.headers['x-razorpay-signature'] as string | undefined;
     if (!signature || !req.rawBody) {
@@ -52,6 +54,17 @@ export class EnrollmentsController {
     }
 
     const event = req.body;
+
+    // R3: money going back out. Both are idempotent (unique provider ids).
+    if (event.event === 'refund.processed') {
+      await this.refundService.recordFromRefundWebhook(event.payload?.refund?.entity);
+      return { received: true };
+    }
+    if (event.event === 'payment.dispute.lost') {
+      await this.refundService.recordFromDisputeWebhook(event.payload?.dispute?.entity);
+      return { received: true };
+    }
+
     if (event.event !== 'payment.captured') {
       return { received: true }; // ignore events we don't care about, but still 200 so Razorpay stops retrying
     }

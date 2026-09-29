@@ -1,6 +1,3 @@
-// Replace: lms-backend/src/payment/payment.module.ts
-// (only change: added PaymentController to the controllers array)
-
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { JwtModule } from '@nestjs/jwt';
@@ -9,17 +6,19 @@ import { Payment } from './entities/payment.entity';
 import { PaymentItem } from './entities/payment-item.entity';
 import { Enrollment } from 'src/enrollments/entities/enrollment.entity';
 import { PaymentsService } from './payments.service';
+import { PaymentSettlementService } from './payment-settlement.service';
+import { RefundService } from './refund.service';
 import { PaymentController } from './payment.controller';
+import { RefundController } from './refund.controller';
 import { PaymentsGateway } from './payments.gateway';
 import { CartModule } from 'src/cart/cart.module';
+import { FinanceModule } from 'src/finance/finance.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([Payment, PaymentItem, Enrollment]),
     CartModule,
-    // Own JwtModule registration (separate from AuthModule's) so the
-    // gateway can verify the same access tokens without AuthModule
-    // needing to export anything.
+    FinanceModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
@@ -28,8 +27,8 @@ import { CartModule } from 'src/cart/cart.module';
       }),
     }),
   ],
-  controllers: [PaymentController],
-  providers: [PaymentsService, PaymentsGateway],
-  exports: [PaymentsService, PaymentsGateway],
+  controllers: [PaymentController, RefundController], // R3: + RefundController
+  providers: [PaymentsService, PaymentSettlementService, RefundService, PaymentsGateway], // R3: + RefundService
+  exports: [PaymentsService, PaymentSettlementService, RefundService, PaymentsGateway],
 })
 export class PaymentsModule {}

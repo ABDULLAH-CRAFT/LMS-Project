@@ -2,14 +2,14 @@ import {
   Injectable,
   ConflictException,
   NotFoundException,
-  BadRequestException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { Enrollment } from './entities/enrollment.entity';
 import { CoursesService } from '../courses/courses.service';
 import { PaymentsService } from 'src/payment/payments.service';
 import { PaymentsGateway } from 'src/payment/payments.gateway';
+import { PaymentSettlementService } from 'src/payment/payment-settlement.service';
 import { Payment, PaymentStatus } from 'src/payment/entities/payment.entity';
 import { CheckoutCartDto } from './dto/checkout-cart.dto';
 import { VerifyPaymentDto } from 'src/payment/dto/verify-payment.dto';
@@ -24,6 +24,7 @@ export class EnrollmentsService {
     private paymentsService: PaymentsService,
     private paymentsGateway: PaymentsGateway,
     private cartService: CartService,
+    private paymentSettlement: PaymentSettlementService, // NEW (R2)
   ) {}
 
   async checkoutCart(studentId: string, dto: CheckoutCartDto) {
@@ -87,13 +88,12 @@ export class EnrollmentsService {
       throw new NotFoundException('Payment was not completed');
     }
 
-    return { enrollments: await this.createEnrollmentsFromPayment(studentId, payment) };
+    return { enrollments: await this.settleAndNotify(payment) };
   }
 
   /**
-   * Called by the Razorpay webhook — the safety net for when the client
-   * never calls /verify (app closed/crashed/network dropped right after
-   * paying). Idempotent: safe to call multiple times for the same payment.
+   * Called by the Razorpay webhook - the safety net for when the client
+   * never calls /verify. Idempotent: safe to call multiple times.
    */
   async confirmFromWebhook(providerOrderId: string, providerPaymentId: string) {
     const payment = await this.paymentsService.findByProviderOrderId(providerOrderId);
@@ -101,8 +101,6 @@ export class EnrollmentsService {
       throw new NotFoundException(`No payment found for order ${providerOrderId}`);
     }
 
-    // Already fully processed (either by the client's own /verify call, or
-    // a duplicate webhook delivery) — nothing left to do.
     const alreadyPaid = payment.status === PaymentStatus.PAID;
 
     const confirmed = alreadyPaid
@@ -113,48 +111,32 @@ export class EnrollmentsService {
       throw new NotFoundException(`No payment found for order ${providerOrderId}`);
     }
 
-    return { enrollments: await this.createEnrollmentsFromPayment(confirmed.userId, confirmed) };
+    return { enrollments: await this.settleAndNotify(confirmed) };
   }
 
-  /** Shared by confirmCart and confirmFromWebhook — creates one Enrollment
-   *  per course_enrollment item in the payment (skipping ones that already
-   *  exist), then drops those courses from the cart. Safe to call twice for
-   *  the same payment — it just returns the existing enrollments. */
-  private async createEnrollmentsFromPayment(studentId: string, payment: Payment) {
-    const enrollments: Enrollment[] = [];
-    const paidCourseIds: string[] = [];
+  /**
+   * Shared by confirmCart and confirmFromWebhook.
+   *
+   * R2: the money side (revenue ledger) and the access side (enrollments) are settled
+   * together, atomically, by PaymentSettlementService - exactly once per payment no
+   * matter how many times or in what order /verify, the webhook or the return URL run.
+   * Cart cleanup and the WebSocket push are non-financial and happen after commit.
+   */
+  private async settleAndNotify(payment: Payment) {
+    const result = await this.paymentSettlement.settle(payment.id);
 
-    for (const item of payment.items) {
-      if (item.referenceType !== 'course_enrollment') continue;
-      paidCourseIds.push(item.referenceId);
+    await this.cartService.removeItems(payment.userId, result.courseIds);
 
-      const existing = await this.enrollmentRepo.findOne({
-        where: { studentId, courseId: item.referenceId },
-      });
-
-      if (existing) {
-        enrollments.push(existing);
-        continue;
-      }
-
-      const enrollment = this.enrollmentRepo.create({ studentId, courseId: item.referenceId });
-      enrollments.push(await this.enrollmentRepo.save(enrollment));
-    }
-
-    await this.cartService.removeItems(studentId, paidCourseIds);
-
-    // Push the result over the WebSocket too — this is what lets the
-    // webhook path (which the client never itself called) still tell an
-    // open tab "you're enrolled now" instead of the tab having no way
-    // to find out. Harmless no-op if the client already knows because
-    // it made the /verify call itself.
-    this.paymentsGateway.notifyPaymentSuccess(studentId, {
+    this.paymentsGateway.notifyPaymentSuccess(payment.userId, {
       orderId: payment.providerOrderId,
       paymentId: payment.providerPaymentId ?? '',
-      enrolledCourseIds: paidCourseIds,
+      enrolledCourseIds: result.courseIds,
     });
 
-    return enrollments;
+    if (result.courseIds.length === 0) return [];
+    return this.enrollmentRepo.find({
+      where: { studentId: payment.userId, courseId: In(result.courseIds) },
+    });
   }
 
   findMyEnrollments(studentId: string) {

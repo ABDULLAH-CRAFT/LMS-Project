@@ -7,9 +7,9 @@ import Razorpay from 'razorpay';
 import { Payment, PaymentStatus } from './entities/payment.entity';
 import { PaymentItem } from './entities/payment-item.entity';
 import { VerifyPaymentDto } from './dto/verify-payment.dto';
-import { Enrollment } from 'src/enrollments/entities/enrollment.entity';
 import { CartService } from 'src/cart/cart.service';
 import { PaymentsGateway } from './payments.gateway';
+import { PaymentSettlementService } from './payment-settlement.service';
 
 export interface PaymentLineItem {
   referenceType: string;
@@ -18,7 +18,6 @@ export interface PaymentLineItem {
   quantity?: number;
 }
 
-
 @Injectable()
 export class PaymentsService {
   private razorpay: Razorpay;
@@ -26,10 +25,10 @@ export class PaymentsService {
   constructor(
     @InjectRepository(Payment) private paymentRepo: Repository<Payment>,
     @InjectRepository(PaymentItem) private paymentItemRepo: Repository<PaymentItem>,
-    @InjectRepository(Enrollment) private enrollmentRepo: Repository<Enrollment>,
     private cartService: CartService,
     private config: ConfigService,
     private paymentsGateway: PaymentsGateway,
+    private settlement: PaymentSettlementService, // NEW (R2)
   ) {
     this.razorpay = new Razorpay({
       key_id: this.config.getOrThrow<string>('RAZORPAY_KEY_ID'),
@@ -37,12 +36,7 @@ export class PaymentsService {
     });
   }
 
-  /**
-   * Creates ONE combined order covering however many line items are
-   * passed in — a single course, or an entire cart. The calling module
-   * doesn't need to know this supports multiple items; it just passes a list.
-   */
-    /** Used by the webhook handler to look up which Payment a captured event belongs to. */
+  /** Used by the webhook handler to look up which Payment a captured event belongs to. */
   async findByProviderOrderId(providerOrderId: string): Promise<Payment | null> {
     return this.paymentRepo.findOne({
       where: { providerOrderId },
@@ -81,8 +75,6 @@ export class PaymentsService {
       receipt: `order_${userId}_${Date.now()}`,
     });
 
-
-    
     const payment = this.paymentRepo.create({
       userId,
       amount: totalAmount,
@@ -112,8 +104,7 @@ export class PaymentsService {
 
   /**
    * Verifies a completed Razorpay payment and returns the Payment WITH
-   * its items loaded — so the calling module can process every line
-   * item (e.g. create one Enrollment per course in the order).
+   * its items loaded.
    */
   async verifyAndConfirm(userId: string, dto: VerifyPaymentDto): Promise<Payment> {
     const payment = await this.paymentRepo.findOne({
@@ -121,6 +112,10 @@ export class PaymentsService {
       relations: { items: true },
     });
     if (!payment) throw new NotFoundException('Payment not found');
+
+    // R2: a payment that is already PAID (and possibly already turned into revenue)
+    // must never be downgraded by a repeated or forged /verify call.
+    if (payment.status === PaymentStatus.PAID) return payment;
 
     const expectedSignature = crypto
       .createHmac('sha256', this.config.getOrThrow<string>('RAZORPAY_KEY_SECRET'))
@@ -139,19 +134,11 @@ export class PaymentsService {
   }
 
   /**
-   * Verifies the signature and finalizes the enrollment right here on
-   * the server, called directly from the browser redirect the instant
-   * Razorpay's checkout finishes — BEFORE control ever passes back to
-   * the app. This is what makes the enrollment go through even if the
-   * app crashes, loses connectivity, or the user backs out right after
-   * paying, instead of depending on the client's own /enrollments/verify
-   * call to be the only thing that finalizes it.
+   * Mobile redirect path: verifies the signature and finalizes the order right
+   * here on the server, before control passes back to the app.
    *
-   * Trust here comes from the HMAC signature (same as the webhook), not
-   * from a logged-in user — this route has no bearer token, since it's
-   * hit by a browser redirect, not the app's own API client. Idempotent:
-   * safe to run again later when the client's own /verify call (or the
-   * webhook) processes the same payment.
+   * R2: revenue allocation + enrollment now happen in ONE transaction via
+   * PaymentSettlementService. Idempotent with /verify and the webhook.
    */
   async confirmOrderAndEnroll(dto: {
     razorpayOrderId: string;
@@ -178,28 +165,14 @@ export class PaymentsService {
       await this.paymentRepo.save(payment);
     }
 
-    const paidCourseIds: string[] = [];
+    const result = await this.settlement.settle(payment.id);
 
-    for (const item of payment.items) {
-      if (item.referenceType !== 'course_enrollment') continue;
-      paidCourseIds.push(item.referenceId);
-
-      const existing = await this.enrollmentRepo.findOne({
-        where: { studentId: payment.userId, courseId: item.referenceId },
-      });
-      if (!existing) {
-        await this.enrollmentRepo.save(
-          this.enrollmentRepo.create({ studentId: payment.userId, courseId: item.referenceId }),
-        );
-      }
-    }
-
-    await this.cartService.removeItems(payment.userId, paidCourseIds);
+    await this.cartService.removeItems(payment.userId, result.courseIds);
 
     this.paymentsGateway.notifyPaymentSuccess(payment.userId, {
       orderId: payment.providerOrderId,
       paymentId: dto.razorpayPaymentId,
-      enrolledCourseIds: paidCourseIds,
+      enrolledCourseIds: result.courseIds,
     });
   }
 }
