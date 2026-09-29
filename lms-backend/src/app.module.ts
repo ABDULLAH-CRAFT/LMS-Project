@@ -14,6 +14,8 @@ import { CartModule } from './cart/cart.module';
 import { NotificationSettingsModule } from './notification-settings/notification-settings.module';
 import { UploadsModule } from './uploads/uploads.module';
 import { ProgressModule } from './progress/progress.module';
+import { LessonResourcesModule } from './lesson-resources/lesson-resources.module';
+import { AssignmentsModule } from './assignments/assignments.module';
 
 @Module({
   imports: [
@@ -44,7 +46,9 @@ import { ProgressModule } from './progress/progress.module';
     CartModule,
     NotificationSettingsModule,
     UploadsModule,
-    ProgressModule, 
+    ProgressModule,
+    LessonResourcesModule,
+    AssignmentsModule,
   ],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
 })
