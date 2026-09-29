@@ -19,6 +19,8 @@ import { AssignmentsModule } from './assignments/assignments.module';
 import { SubmissionsModule } from './submissions/submissions.module';
 import { AnnouncementsModule } from './announcements/announcements.module';
 import { TeacherInsightsModule } from './teacher-insights/teacher-insights.module';
+import { join } from 'path';
+import { FinanceModule } from './finance/finance.module';
 
 @Module({
   imports: [
@@ -36,7 +38,9 @@ import { TeacherInsightsModule } from './teacher-insights/teacher-insights.modul
         password: config.get('DATABASE_PASSWORD'),
         database: config.get('DATABASE_NAME'),
         entities: [__dirname + '/**/*.entity{.ts,.js}'],
-        synchronize: true, // unchanged — still auto-syncing schema from entities
+        synchronize: true, // unchanged for now - financial tables are opted out per-entity (synchronize: false); Phase R15 removes this
+        migrations: [join(__dirname, 'migrations', __filename.endsWith('.ts') ? '*.ts' : '*.js')], // NEW
+        migrationsRun: config.get('DB_MIGRATIONS_RUN') === 'true', // NEW - off by default; run migrations manually
       }),
     }),
     UsersModule,
@@ -53,6 +57,7 @@ import { TeacherInsightsModule } from './teacher-insights/teacher-insights.modul
     LessonResourcesModule,
     AssignmentsModule,
     SubmissionsModule,
+    FinanceModule,
     AnnouncementsModule,
     TeacherInsightsModule,
   ],
