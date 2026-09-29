@@ -8,6 +8,11 @@ import LoginPage from './pages/login';
 import RegisterPage from './pages/Register';
 import AdminDashboard from './pages/AdminDashboard';
 import AdminCourses from './pages/AdminCourses'; // NEW
+import AdminRevenue from './pages/AdminRevenue'; // R4
+import AdminCourseSales from './pages/AdminCourseSales'; // R4
+import ComingSoonPage from './components/ComingSoonPage'; // R4/R5 - placeholders
+import { adminSidebarSections } from './config/adminSidebar'; // R4
+import { teacherSidebarSections } from './config/teacherSidebar'; // R5
 import TeacherDrafts from './pages/TeacherDrafts';
 import TeacherPublished from './pages/TeacherPublished';
 import TeacherProfile from './pages/TeacherProfile';
@@ -28,6 +33,8 @@ import TeacherSubmissions from './pages/TeacherSubmissions';
 import TeacherCourseStudents from './pages/TeacherCourseStudents';
 import TeacherAnnouncements from './pages/TeacherAnnouncements';
 import TeacherEarnings from './pages/TeacherEarnings';
+import TeacherCourseEarnings from './pages/TeacherCourseEarnings'; // R5
+import TeacherStatements from './pages/TeacherStatements'; // R5
 import StudentAnnouncements from './pages/StudentAnnouncements';
 
 export default function App() {
@@ -68,14 +75,59 @@ export default function App() {
                 </ProtectedRoute>
               }
             />
-              <Route
-                path="/teacher"
-                element={
-                  <ProtectedRoute allowedRoles={['teacher']}>
-                    <TeacherDashboard />
-                  </ProtectedRoute>
-                }
-              />
+
+            {/* R4 — Finance */}
+            <Route
+              path="/admin/revenue"
+              element={
+                <ProtectedRoute allowedRoles={['admin']}>
+                  <AdminRevenue />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/course-sales"
+              element={
+                <ProtectedRoute allowedRoles={['admin']}>
+                  <AdminCourseSales />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/membership"
+              element={
+                <ProtectedRoute allowedRoles={['admin']}>
+                  <ComingSoonPage
+                    sidebarSections={adminSidebarSections}
+                    title="Membership"
+                    description="Membership plans, subscribers and the teacher revenue pool."
+                    icon="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"
+                  />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/payouts"
+              element={
+                <ProtectedRoute allowedRoles={['admin']}>
+                  <ComingSoonPage
+                    sidebarSections={adminSidebarSections}
+                    title="Payouts"
+                    description="Approve, process and review teacher payouts."
+                    icon="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"
+                  />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/teacher"
+              element={
+                <ProtectedRoute allowedRoles={['teacher']}>
+                  <TeacherDashboard />
+                </ProtectedRoute>
+              }
+            />
             <Route
               path="/teacher/drafts"
               element={
@@ -108,8 +160,7 @@ export default function App() {
                 </ProtectedRoute>
               }
             />
-
-              <Route
+            <Route
               path="/teacher/courses/:id/submissions"
               element={
                 <ProtectedRoute allowedRoles={['teacher']}>
@@ -117,7 +168,7 @@ export default function App() {
                 </ProtectedRoute>
               }
             />
-                        <Route
+            <Route
               path="/teacher/courses/:id/students"
               element={
                 <ProtectedRoute allowedRoles={['teacher']}>
@@ -133,11 +184,55 @@ export default function App() {
                 </ProtectedRoute>
               }
             />
+
+            {/* R5 — Teacher earnings */}
             <Route
               path="/teacher/earnings"
               element={
                 <ProtectedRoute allowedRoles={['teacher']}>
                   <TeacherEarnings />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/teacher/earnings/courses"
+              element={
+                <ProtectedRoute allowedRoles={['teacher']}>
+                  <TeacherCourseEarnings />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/teacher/earnings/statements"
+              element={
+                <ProtectedRoute allowedRoles={['teacher']}>
+                  <TeacherStatements />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/teacher/earnings/membership"
+              element={
+                <ProtectedRoute allowedRoles={['teacher']}>
+                  <ComingSoonPage
+                    sidebarSections={teacherSidebarSections}
+                    title="Membership Earnings"
+                    description="Your share of the monthly membership pool, and how your engagement score is calculated."
+                    icon="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"
+                  />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/teacher/earnings/payouts"
+              element={
+                <ProtectedRoute allowedRoles={['teacher']}>
+                  <ComingSoonPage
+                    sidebarSections={teacherSidebarSections}
+                    title="Payouts"
+                    description="Your payout history and the status of each payment to you."
+                    icon="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"
+                  />
                 </ProtectedRoute>
               }
             />
@@ -183,7 +278,7 @@ export default function App() {
                 </ProtectedRoute>
               }
             />
-                        <Route
+            <Route
               path="/student/announcements"
               element={
                 <ProtectedRoute allowedRoles={['student']}>

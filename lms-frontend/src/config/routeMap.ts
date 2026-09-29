@@ -11,10 +11,18 @@ export const routeMap: Record<string, string> = {
   '/teacher/drafts': 'Draft Courses',
   '/teacher/published': 'Published Courses',
   '/teacher/announcements': 'Announcements',
-  '/teacher/earnings': 'Earnings',
+  '/teacher/earnings': 'Earnings Overview', // R5
+  '/teacher/earnings/courses': 'Course Sales', // R5
+  '/teacher/earnings/membership': 'Membership Earnings', // placeholder until R12
+  '/teacher/earnings/statements': 'Statements', // R5
+  '/teacher/earnings/payouts': 'Payouts', // placeholder until R13
   '/teacher/profile': 'Profile',
   '/admin': 'Manage Teachers',
   '/admin/courses': 'All Courses',
+  '/admin/revenue': 'Revenue Overview', // R4
+  '/admin/course-sales': 'Course Sales', // R4
+  '/admin/membership': 'Membership', // placeholder until R6
+  '/admin/payouts': 'Payouts', // placeholder until R13
 };
 
 export const DEFAULT_PAGE_TITLE = 'Dashboard'; // fallback for routes not in the map, e.g. /courses/:id
