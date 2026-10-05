@@ -1,4 +1,5 @@
 import { Controller, Post, Get, Param, UseGuards, Req } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler'; // R8
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { JwtAuthGuard } from 'src/auth/guard/jwt-auth.guard';
 import { RolesGuard } from 'src/common/roles.guard';
@@ -20,13 +21,16 @@ export class ProgressController {
     return this.progressService.completeLesson(req.user.userId, lessonId);
   }
 
-  @Get('courses/:courseId')
+
+  // R8: the student opened a lesson (records COURSE_STARTED / LESSON_STARTED engagement events)
+  @Post('lessons/:lessonId/start')
   @ApiBearerAuth()
-  @ApiOperation({ summary: "Get the logged-in student's progress for one course" })
+  @ApiOperation({ summary: 'Record that the logged-in student opened a lesson (engagement tracking)' })
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.STUDENT)
-  getCourseProgress(@Req() req: any, @Param('courseId') courseId: string) {
-    return this.progressService.getCourseProgress(req.user.userId, courseId);
+  @Throttle({ default: { limit: 30, ttl: 60_000 } }) // 30 / minute / client
+  startLesson(@Req() req: any, @Param('lessonId') lessonId: string) {
+    return this.progressService.startLesson(req.user.userId, lessonId);
   }
 
   @Get('me/stats')

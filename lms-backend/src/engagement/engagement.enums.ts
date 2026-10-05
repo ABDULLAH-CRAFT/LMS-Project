@@ -1,0 +1,19 @@
+export enum LearningEventType {
+  COURSE_STARTED = 'COURSE_STARTED',
+  LESSON_STARTED = 'LESSON_STARTED',
+  LESSON_COMPLETED = 'LESSON_COMPLETED',
+  QUIZ_ATTEMPTED = 'QUIZ_ATTEMPTED',
+  QUIZ_COMPLETED = 'QUIZ_COMPLETED',
+  ASSIGNMENT_SUBMITTED = 'ASSIGNMENT_SUBMITTED',
+  COURSE_COMPLETED = 'COURSE_COMPLETED',
+  CERTIFICATE_EARNED = 'CERTIFICATE_EARNED',
+  STUDENT_RETURNED = 'STUDENT_RETURNED',
+  COURSE_RATED = 'COURSE_RATED',
+}
+
+// How the student was allowed into the course when the event happened.
+// Phase R9 uses this so only MEMBERSHIP activity feeds the membership teacher pool.
+export enum LearningAccessVia {
+  ENROLLMENT = 'ENROLLMENT',
+  MEMBERSHIP = 'MEMBERSHIP',
+}

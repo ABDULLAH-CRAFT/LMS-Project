@@ -12,6 +12,8 @@ import { CourseModule } from '../course-content/entities/course-module.entity';
 import { Enrollment } from '../enrollments/entities/enrollment.entity';
 
 import { MembershipAccessService } from '../memberships/membership-access.service'; // R6
+import { EngagementService } from '../engagement/engagement.service'; // R8
+import { LearningEventType } from '../engagement/engagement.enums'; // R8
 
 @Injectable()
 export class ProgressService {
@@ -29,6 +31,7 @@ export class ProgressService {
     private enrollmentRepo: Repository<Enrollment>,
 
     private membershipAccess: MembershipAccessService, // R6
+    private engagement: EngagementService, // R8
   ) {}
 
   private async requireEnrollment(
@@ -66,6 +69,34 @@ export class ProgressService {
     });
 
     return lessons.map((l) => l.id);
+  }
+
+  // R8: the student opened a lesson. Records COURSE_STARTED (once per course) and LESSON_STARTED (once per lesson).
+  async startLesson(studentId: string, lessonId: string) {
+    const lesson = await this.lessonRepo.findOne({ where: { id: lessonId } });
+    if (!lesson) throw new NotFoundException('Lesson not found');
+
+    const module = await this.moduleRepo.findOne({ where: { id: lesson.moduleId } });
+    if (!module) throw new NotFoundException('Module not found');
+
+    await this.requireEnrollment(studentId, module.courseId);
+
+    await this.engagement.track({
+      studentId,
+      courseId: module.courseId,
+      eventType: LearningEventType.COURSE_STARTED,
+      dedupeScope: module.courseId,
+    });
+
+    await this.engagement.track({
+      studentId,
+      courseId: module.courseId,
+      lessonId,
+      eventType: LearningEventType.LESSON_STARTED,
+      dedupeScope: lessonId,
+    });
+
+    return { ok: true };
   }
 
   async completeLesson(
@@ -111,7 +142,48 @@ export class ProgressService {
       courseId: module.courseId,
     });
 
-    return this.progressRepo.save(progress);
+    const saved = await this.progressRepo.save(progress);
+
+    // R8: engagement events. Best-effort - they can never make the completion itself fail.
+    await this.trackCompletionEvents(studentId, module.courseId, lessonId);
+
+    return saved;
+  }
+
+  // R8
+  private async trackCompletionEvents(
+    studentId: string,
+    courseId: string,
+    lessonId: string,
+  ) {
+    try {
+      await this.engagement.track({
+        studentId,
+        courseId,
+        lessonId,
+        eventType: LearningEventType.LESSON_COMPLETED,
+        dedupeScope: lessonId,
+      });
+
+      const lessonIds = await this.getLessonIdsForCourse(courseId);
+      if (lessonIds.length === 0) return;
+
+      const done = await this.progressRepo.count({
+        where: { studentId, courseId, lessonId: In(lessonIds) },
+      });
+
+      if (done >= lessonIds.length) {
+        await this.engagement.track({
+          studentId,
+          courseId,
+          eventType: LearningEventType.COURSE_COMPLETED,
+          dedupeScope: courseId,
+          totalLessons: lessonIds.length,
+        });
+      }
+    } catch {
+      // swallowed on purpose - EngagementService.track already logs its own failures
+    }
   }
 
   async getCourseProgress(

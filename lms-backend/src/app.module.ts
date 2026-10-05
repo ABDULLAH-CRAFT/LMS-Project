@@ -22,6 +22,7 @@ import { TeacherInsightsModule } from './teacher-insights/teacher-insights.modul
 import { join } from 'path';
 import { FinanceModule } from './finance/finance.module';
 import { MembershipsModule } from './memberships/memberships.module'; // R6
+import { EngagementModule } from './engagement/engagement.module'; // R8
 
 @Module({
   imports: [
@@ -60,6 +61,7 @@ import { MembershipsModule } from './memberships/memberships.module'; // R6
     SubmissionsModule,
     FinanceModule,
     MembershipsModule,
+    EngagementModule, // R8
     AnnouncementsModule,
     TeacherInsightsModule,
   ],

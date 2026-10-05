@@ -9,6 +9,7 @@ import { CoursesModule } from '../courses/courses.module';
 import { SubmissionsService } from './submissions.service';
 import { SubmissionsController } from './submissions.controller';
 import { MembershipsModule } from 'src/memberships/memberships.module';
+import { EngagementModule } from '../engagement/engagement.module'; // R8
 
 @Module({
   imports: [
@@ -16,7 +17,7 @@ import { MembershipsModule } from 'src/memberships/memberships.module';
     CoursesModule, // exports CoursesService
       TypeOrmModule.forFeature([AssignmentSubmission, Assignment, Lesson, Enrollment, User]),
   /* ...whatever else is already in this array..., */
-  MembershipsModule, // R6
+  MembershipsModule, EngagementModule
   ],
   providers: [SubmissionsService],
   controllers: [SubmissionsController],

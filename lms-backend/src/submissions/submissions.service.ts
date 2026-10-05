@@ -18,6 +18,8 @@ import { CoursesService } from '../courses/courses.service';
 import { CreateSubmissionDto } from './dto/create-submission.dto';
 import { GradeSubmissionDto } from './dto/grade-submission.dto';
 import { MembershipAccessService } from '../memberships/membership-access.service'; // R6
+import { EngagementService } from '../engagement/engagement.service'; // R8
+import { LearningEventType } from '../engagement/engagement.enums'; // R8
 
 // Served by main.ts's existing /uploads/ static route — nothing to change there.
 export const SUBMISSIONS_DIR = join(__dirname, '..', '..', 'uploads', 'submissions');
@@ -32,6 +34,7 @@ export class SubmissionsService {
     @InjectRepository(User) private userRepo: Repository<User>,
     private coursesService: CoursesService,
     private membershipAccess: MembershipAccessService, // R6
+    private engagement: EngagementService, // R8
   ) {}
 
   private async verifyOwnership(courseId: string, teacherId: string) {
@@ -97,6 +100,16 @@ export class SubmissionsService {
       }
 
       const saved = await this.submissionRepo.save(submission);
+      
+      // R8: one ASSIGNMENT_SUBMITTED event per student per assignment - resubmitting never earns again.
+      await this.engagement.track({
+        studentId,
+        courseId,
+        lessonId: assignment.lessonId,
+        eventType: LearningEventType.ASSIGNMENT_SUBMITTED,
+        dedupeScope: assignmentId,
+        metadata: { assignmentId, isLate: submission.isLate },
+      });
 
       if (file && oldStoredName) this.removeFileFromDisk(oldStoredName); // only after the DB save succeeded
       return this.toStudentSubmission(saved);

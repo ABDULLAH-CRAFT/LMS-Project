@@ -24,6 +24,7 @@ export const routeMap: Record<string, string> = {
   '/admin/course-sales': 'Course Sales', // R4
   '/admin/membership': 'Membership', // placeholder until R6
   '/admin/payouts': 'Payouts', // placeholder until R13
+  '/admin/engagement': 'Engagement Analytics', // R9
 };
 
 export const DEFAULT_PAGE_TITLE = 'Dashboard'; // fallback for routes not in the map, e.g. /courses/:id

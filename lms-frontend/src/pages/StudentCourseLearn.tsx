@@ -1,10 +1,11 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '../lib/axios';
 import type { Course } from '../types/course';
 import type { CourseModuleWithLessons } from '../types/courseContent';
 import type { CourseProgress } from '../types/progress';
+
 
 export default function StudentCourseLearn() {
   const { id: courseId } = useParams<{ id: string }>();
@@ -84,6 +85,19 @@ export default function StudentCourseLearn() {
   const nextLesson = currentIndex >= 0 ? flatLessons[currentIndex + 1] : null;
   const completedSet = new Set(progressQuery.data?.completedLessonIds ?? []);
   const isCurrentComplete = currentLesson ? completedSet.has(currentLesson.id) : false;
+  
+  // R8: tell the backend a lesson was opened. The backend dedupes (one event per student per lesson) and
+  // decides what, if anything, it is worth - the frontend sends no points, teacher or score.
+  const startedLessonsRef = useRef<Set<string>>(new Set());
+  useEffect(() => {
+    if (!selectedLessonId || !isEnrolled || !progressQuery.data) return;
+    if (progressQuery.data.completedLessonIds.includes(selectedLessonId)) return; // already completed, nothing to track
+    if (startedLessonsRef.current.has(selectedLessonId)) return;
+    startedLessonsRef.current.add(selectedLessonId);
+    api.post(`/progress/lessons/${selectedLessonId}/start`).catch(() => {
+      // tracking must never get in the way of learning
+    });
+  }, [selectedLessonId, isEnrolled, progressQuery.data]);
 
   if (courseQuery.isLoading || curriculumQuery.isLoading || !isEnrolled) {
     return <div className="min-h-screen bg-background flex items-center justify-center text-muted">Loading...</div>;

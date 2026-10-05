@@ -38,6 +38,7 @@ import TeacherStatements from './pages/TeacherStatements'; // R5
 import StudentAnnouncements from './pages/StudentAnnouncements';
 import AdminMembership from './pages/AdminMembership'; // R6
 import StudentMembership from './pages/StudentMembership'; // R6
+import AdminEngagementScores from './pages/AdminEngagementScores'; // R9
 
 export default function App() {
   return (
@@ -100,6 +101,14 @@ export default function App() {
               element={
                 <ProtectedRoute allowedRoles={['admin']}>
                   <AdminMembership />
+                </ProtectedRoute>
+              }
+            />
+              <Route
+              path="/admin/engagement"
+              element={
+                <ProtectedRoute allowedRoles={['admin']}>
+                  <AdminEngagementScores />
                 </ProtectedRoute>
               }
             />
