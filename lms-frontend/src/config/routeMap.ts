@@ -14,9 +14,9 @@ export const routeMap: Record<string, string> = {
   '/teacher/announcements': 'Announcements',
   '/teacher/earnings': 'Earnings Overview', // R5
   '/teacher/earnings/courses': 'Course Sales', // R5
-  '/teacher/earnings/membership': 'Membership Earnings', // placeholder until R12
+  '/teacher/earnings/membership': 'Membership Earnings', // R12
   '/teacher/earnings/statements': 'Statements', // R5
-  '/teacher/earnings/payouts': 'Payouts', // placeholder until R13
+   '/teacher/earnings/payouts': 'Payouts', // R13
   '/teacher/profile': 'Profile',
   '/admin': 'Manage Teachers',
   '/admin/courses': 'All Courses',
@@ -24,7 +24,7 @@ export const routeMap: Record<string, string> = {
   '/admin/course-sales': 'Course Sales', // R4
   '/admin/membership': 'Membership', // placeholder until R6
   '/admin/membership-periods': 'Revenue Periods', // R10
-  '/admin/payouts': 'Payouts', // placeholder until R13
+  '/admin/payouts': 'Payouts', // R13
   '/admin/engagement': 'Engagement Analytics', // R9
 };
 

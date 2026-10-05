@@ -13,11 +13,13 @@ import { FinanceAdminService } from './finance-admin.service'; // R4
 import { FinanceAdminController } from './finance-admin.controller'; // R4
 import { FinanceTeacherService } from './finance-teacher.service'; // R5
 import { FinanceTeacherController } from './finance-teacher.controller'; // R5
+import { FinanceTeacherMembershipService } from './finance-teacher-membership.service'; // R12
+import { FinanceTeacherMembershipController } from './finance-teacher-membership.controller'; // R12
 
 @Module({
   imports: [TypeOrmModule.forFeature([RevenueTransaction, RevenueAllocation, RevenuePeriod, RevenueRule])],
-  controllers: [FinanceController, FinanceAdminController, FinanceTeacherController], // R3, R4, R5
-  providers: [RevenueRulesService, RevenuePeriodService, RevenueLedgerService, FinanceQueryService, FinanceAdminService, FinanceTeacherService],
-  exports: [RevenueRulesService, RevenuePeriodService, RevenueLedgerService, FinanceQueryService, FinanceAdminService, FinanceTeacherService],
+  controllers: [FinanceController, FinanceAdminController, FinanceTeacherController, FinanceTeacherMembershipController], // R3, R4, R5, R12
+  providers: [RevenueRulesService, RevenuePeriodService, RevenueLedgerService, FinanceQueryService, FinanceAdminService, FinanceTeacherService, FinanceTeacherMembershipService],
+  exports: [RevenueRulesService, RevenuePeriodService, RevenueLedgerService, FinanceQueryService, FinanceAdminService, FinanceTeacherService, FinanceTeacherMembershipService],
 })
 export class FinanceModule {}

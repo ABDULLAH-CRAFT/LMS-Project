@@ -22,6 +22,13 @@ const STATUS_STYLE: Record<StatementStatus, string> = {
   REFUNDED: 'bg-danger-100 text-danger-700',
 };
 
+const PAYOUT_LABEL: Record<string, string> = {
+  UNPAID: 'Not paid yet',
+  REQUESTED: 'Payout requested',
+  PROCESSING: 'Processing',
+  PAID: 'Paid',
+};
+
 const th = 'px-4 py-3 text-xs font-semibold text-muted uppercase tracking-wide whitespace-nowrap';
 const td = 'px-4 py-3 text-sm text-text whitespace-nowrap';
 
@@ -149,7 +156,7 @@ export default function TeacherStatements() {
                               {STATUS_LABEL[e.status]}
                             </span>
                           </td>
-                          <td className={`${td} text-xs text-muted`}>Pending</td>
+                          <td className={`${td} text-xs text-muted`}>{PAYOUT_LABEL[e.payoutStatus]}</td>
                         </tr>
                         {open && (
                           <tr>

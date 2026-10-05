@@ -41,6 +41,9 @@ import StudentMembership from './pages/StudentMembership'; // R6
 import AdminEngagementScores from './pages/AdminEngagementScores'; // R9
 import AdminMembershipPeriods from './pages/AdminMembershipPeriods'; // R10
 import AdminMembershipAnalytics from './pages/AdminMembershipAnalytics'; // R11
+import TeacherMembershipEarnings from './pages/TeacherMembershipEarnings'; // R12
+import AdminPayouts from './pages/AdminPayouts'; // R13
+import TeacherPayouts from './pages/TeacherPayouts'; // R13
 
 export default function App() {
   return (
@@ -134,12 +137,7 @@ export default function App() {
               path="/admin/payouts"
               element={
                 <ProtectedRoute allowedRoles={['admin']}>
-                  <ComingSoonPage
-                    sidebarSections={adminSidebarSections}
-                    title="Payouts"
-                    description="Approve, process and review teacher payouts."
-                    icon="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"
-                  />
+                  <AdminPayouts />
                 </ProtectedRoute>
               }
             />
@@ -238,25 +236,15 @@ export default function App() {
               path="/teacher/earnings/membership"
               element={
                 <ProtectedRoute allowedRoles={['teacher']}>
-                  <ComingSoonPage
-                    sidebarSections={teacherSidebarSections}
-                    title="Membership Earnings"
-                    description="Your share of the monthly membership pool, and how your engagement score is calculated."
-                    icon="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"
-                  />
+                  <TeacherMembershipEarnings />
                 </ProtectedRoute>
               }
             />
-            <Route
+              <Route
               path="/teacher/earnings/payouts"
               element={
                 <ProtectedRoute allowedRoles={['teacher']}>
-                  <ComingSoonPage
-                    sidebarSections={teacherSidebarSections}
-                    title="Payouts"
-                    description="Your payout history and the status of each payment to you."
-                    icon="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"
-                  />
+                  <TeacherPayouts />
                 </ProtectedRoute>
               }
             />

@@ -78,7 +78,7 @@ export interface StatementEntry {
   adjustments: string;
   netEarning: string;
   status: StatementStatus;
-  payoutStatus: 'PENDING';
+  payoutStatus: 'UNPAID' | 'REQUESTED' | 'PROCESSING' | 'PAID';
   refunds: StatementRefund[];
 }
 

@@ -53,31 +53,80 @@ export class FinanceTeacherService {
       [teacherId],
     );
 
+    // R12 - frozen membership shares of FINALIZED periods (the R10 tables). Provisional periods are NOT counted.
+    const FINAL_MEMBERSHIP_WHERE = `
+      a."teacherId" = $1::uuid
+      AND p."finalCalculationId" = a."calculationId"
+      AND p."status"::text IN ('FINALIZED','PAYOUT_PROCESSING','PAID')`;
+
+    const [finalMembershipRow]: Row[] = await this.dataSource.query(
+      `SELECT COALESCE(SUM(a."amount"), 0)::text AS "total"
+         FROM "membership_period_allocations" a
+         JOIN "revenue_periods" p ON p."id" = a."periodId"
+        WHERE ${FINAL_MEMBERSHIP_WHERE}`,
+      [teacherId],
+    );
+
+    const membershipMonthlyRows: Row[] = await this.dataSource.query(
+      `SELECT to_char(p."periodStart", 'YYYY-MM') AS "month", COALESCE(SUM(a."amount"), 0)::text AS "net"
+         FROM "membership_period_allocations" a
+         JOIN "revenue_periods" p ON p."id" = a."periodId"
+        WHERE ${FINAL_MEMBERSHIP_WHERE}
+          AND p."periodStart" >= (date_trunc('month', now() AT TIME ZONE 'Asia/Kolkata') - interval '5 months')::date
+        GROUP BY 1`,
+      [teacherId],
+    );
+
+    const membershipByMonth = new Map(
+      membershipMonthlyRows.map((m) => [m.month as string, paise(m.net)]),
+    );
+
     const course = paise(row.course);
-    const membership = paise(row.membership);
+    const membership = paise(row.membership) + paise(finalMembershipRow.total);
     const adjustments = paise(row.adjustments); // negative or zero
     const total = course + membership;
     const net = total + adjustments;
+
+    // R13 - what has actually been paid to this teacher (lines in PAID payouts)
+    const [paidRow]: Row[] = await this.dataSource.query(
+      `SELECT COALESCE(SUM(i."amount"), 0)::text AS "paid"
+         FROM "payout_items" i JOIN "payouts" y ON y."id" = i."payoutId"
+        WHERE y."teacherId" = $1::uuid AND y."status"::text = 'PAID' AND i."releasedAt" IS NULL`,
+      [teacherId],
+    );
+    const paid = paise(paidRow.paid);
 
     // Always return 6 months, oldest first, using the current month in IST.
     const ist = new Date(Date.now() + 330 * 60 * 1000);
     const byMonth = new Map(monthlyRows.map((m) => [m.month as string, m]));
     const monthly: { month: string; net: string; sales: number }[] = [];
+
     for (let i = 5; i >= 0; i--) {
-      const key = new Date(Date.UTC(ist.getUTCFullYear(), ist.getUTCMonth() - i, 1)).toISOString().slice(0, 7);
+      const key = new Date(
+        Date.UTC(ist.getUTCFullYear(), ist.getUTCMonth() - i, 1),
+      )
+        .toISOString()
+        .slice(0, 7);
+
       const hit = byMonth.get(key);
-      monthly.push({ month: key, net: fromPaise(paise(hit?.net)), sales: count(hit?.sales) });
+      const membershipNet = membershipByMonth.get(key) ?? 0n;
+
+      monthly.push({
+        month: key,
+        net: fromPaise(paise(hit?.net) + membershipNet),
+        sales: count(hit?.sales),
+      });
     }
 
     return {
       currency: 'INR',
-      totalEarnings: fromPaise(total), // course + membership, before refunds
+      totalEarnings: fromPaise(total),
       courseSalesEarnings: fromPaise(course),
       membershipEarnings: fromPaise(membership),
-      refundAdjustments: fromPaise(adjustments), // negative or 0.00
+      refundAdjustments: fromPaise(adjustments),
       netEarnings: fromPaise(net),
-      pendingPayout: fromPaise(net), // payouts do not exist until Phase R13
-      paidAmount: '0.00',
+      pendingPayout: fromPaise(net - paid), // R13: net earnings that have not been paid out yet
+      paidAmount: fromPaise(paid), // R13
       sales: count(row.sales),
       refundEvents: count(row.refundEvents),
       thisMonthNet: monthly[monthly.length - 1].net,
@@ -118,6 +167,7 @@ export class FinanceTeacherService {
       const gross = paise(r.gross);
       const teacherShare = paise(r.teacherShare);
       const refunds = paise(r.refunds);
+
       return {
         courseId: r.courseId as string,
         title: r.title as string,
@@ -125,15 +175,16 @@ export class FinanceTeacherService {
         students: count(r.students),
         sales: count(r.sales),
         grossRevenue: fromPaise(gross),
-        lmsShare: fromPaise(gross - teacherShare), // before refunds
-        teacherShare: fromPaise(teacherShare), // before refunds
-        refunds: fromPaise(refunds), // the teacher's portion of refunds
+        lmsShare: fromPaise(gross - teacherShare),
+        teacherShare: fromPaise(teacherShare),
+        refunds: fromPaise(refunds),
         netEarnings: fromPaise(teacherShare - refunds),
       };
     });
 
     const sum = (pick: (c: (typeof courses)[number]) => string) =>
       courses.reduce((total, c) => total + toPaise(pick(c)), 0n);
+
     const totalGross = sum((c) => c.grossRevenue);
     const totalTeacherShare = sum((c) => c.teacherShare);
     const totalRefunds = sum((c) => c.refunds);
@@ -156,7 +207,12 @@ export class FinanceTeacherService {
    * One row per course purchase that earned this teacher money in the range, with any refund
    * adjustments (made at any time) folded in. Exposes no student name/email and no payment ids.
    */
-  async getStatement(teacherId: string, range: TeacherRange, limit: number, offset: number) {
+  async getStatement(
+    teacherId: string,
+    range: TeacherRange,
+    limit: number,
+    offset: number,
+  ) {
     const PURCHASES_CTE = `${MINE_CTE},
       purchases AS (
         SELECT * FROM mine
@@ -197,6 +253,7 @@ export class FinanceTeacherService {
 
     // Refund adjustments for the rows on this page (original earning -> refund -> current balance).
     const txIds = rows.map((r) => r.txId as string);
+
     const refundRows: Row[] = txIds.length
       ? await this.dataSource.query(
           `${MINE_CTE}
@@ -207,24 +264,73 @@ export class FinanceTeacherService {
           [teacherId, txIds],
         )
       : [];
-    const refundsByOriginal = new Map<string, { reference: string; type: string; occurredAt: Date; amount: string }[]>();
+
+    const refundsByOriginal = new Map<
+      string,
+      {
+        reference: string;
+        type: string;
+        occurredAt: Date;
+        amount: string;
+      }[]
+    >();
+
     for (const r of refundRows) {
-      const list = refundsByOriginal.get(r.reversesTransactionId as string) ?? [];
+      const list =
+        refundsByOriginal.get(r.reversesTransactionId as string) ?? [];
+
       list.push({
         reference: shortRef(r.txId as string),
         type: r.type as string,
         occurredAt: r.occurredAt as Date,
-        amount: fromPaise(paise(r.share)), // negative
+        amount: fromPaise(paise(r.share)),
       });
+
       refundsByOriginal.set(r.reversesTransactionId as string, list);
+    }
+
+    // R13 - where each earning is in the payout lifecycle (the teacher's own lines only)
+    const allocationIds = rows.map((r) => r.allocationId as string);
+
+    const payoutRows: Row[] = allocationIds.length
+      ? await this.dataSource.query(
+          `SELECT i."sourceId", y."status"::text AS "status"
+             FROM "payout_items" i
+             JOIN "payouts" y ON y."id" = i."payoutId"
+            WHERE i."sourceKind"::text = 'COURSE_ALLOCATION' AND i."releasedAt" IS NULL
+              AND y."teacherId" = $2::uuid AND i."sourceId" = ANY($1::uuid[])`,
+          [allocationIds, teacherId],
+        )
+      : [];
+
+    const payoutStatusByAllocation = new Map<
+      string,
+      'REQUESTED' | 'PROCESSING' | 'PAID'
+    >();
+
+    for (const p of payoutRows) {
+      const s = p.status as string;
+      const label =
+        s === 'PAID'
+          ? 'PAID'
+          : s === 'PENDING' || s === 'APPROVED'
+            ? 'REQUESTED'
+            : 'PROCESSING';
+
+      payoutStatusByAllocation.set(p.sourceId as string, label);
     }
 
     const entries = rows.map((r) => {
       const earning = paise(r.share);
-      const adjustments = paise(r.adjustments); // negative or zero
+      const adjustments = paise(r.adjustments);
       const net = earning + adjustments;
+
       let status: 'EARNED' | 'PARTIALLY_REFUNDED' | 'REFUNDED' = 'EARNED';
-      if (adjustments < 0n) status = net <= 0n ? 'REFUNDED' : 'PARTIALLY_REFUNDED';
+
+      if (adjustments < 0n) {
+        status = net <= 0n ? 'REFUNDED' : 'PARTIALLY_REFUNDED';
+      }
+
       return {
         allocationId: r.allocationId as string,
         occurredAt: r.occurredAt as Date,
@@ -237,7 +343,9 @@ export class FinanceTeacherService {
         adjustments: fromPaise(adjustments),
         netEarning: fromPaise(net),
         status,
-        payoutStatus: 'PENDING' as const, // real payout states arrive in Phase R13
+        payoutStatus:
+          payoutStatusByAllocation.get(r.allocationId as string) ??
+          ('UNPAID' as const),
         refunds: refundsByOriginal.get(r.txId as string) ?? [],
       };
     });
@@ -255,7 +363,11 @@ export class FinanceTeacherService {
         adjustments: fromPaise(adjustments),
         netEarning: fromPaise(earnings + adjustments),
       },
-      paging: { limit, offset, total: count(totalsRow.entries) },
+      paging: {
+        limit,
+        offset,
+        total: count(totalsRow.entries),
+      },
     };
   }
 }

@@ -64,7 +64,7 @@ export default function TeacherEarnings() {
               hint={`${data.refundEvents} refund event${data.refundEvents === 1 ? '' : 's'}`}
             />
             <StatCard label="Pending payout" value={formatMoney(data.pendingPayout)} tone="positive" hint="Total earnings minus refunds" />
-            <StatCard label="Paid amount" value={formatMoney(data.paidAmount)} hint="Payouts start in a later update" />
+            <StatCard label="Paid amount" value={formatMoney(data.paidAmount)} hint="Payouts that have been sent to you" />
           </div>
 
           <div className="bg-surface rounded-2xl shadow-soft p-5">
@@ -93,10 +93,14 @@ export default function TeacherEarnings() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <Link to="/teacher/earnings/courses" className="bg-surface rounded-2xl shadow-soft p-5 hover:bg-surface-strong/60 transition">
               <p className="text-sm font-semibold text-text">Course sales</p>
               <p className="text-xs text-muted mt-1">See what each course earned, with LMS share and refunds.</p>
+            </Link>
+            <Link to="/teacher/earnings/membership" className="bg-surface rounded-2xl shadow-soft p-5 hover:bg-surface-strong/60 transition">
+              <p className="text-sm font-semibold text-text">Membership earnings</p>
+              <p className="text-xs text-muted mt-1">Your monthly pool share and the engagement score behind it.</p>
             </Link>
             <Link to="/teacher/earnings/statements" className="bg-surface rounded-2xl shadow-soft p-5 hover:bg-surface-strong/60 transition">
               <p className="text-sm font-semibold text-text">Statements</p>
