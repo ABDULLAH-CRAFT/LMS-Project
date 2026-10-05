@@ -24,6 +24,7 @@ import { FinanceModule } from './finance/finance.module';
 import { MembershipsModule } from './memberships/memberships.module'; // R6
 import { EngagementModule } from './engagement/engagement.module'; // R8
 import { MembershipPeriodsModule } from './membership-periods/membership-periods.module'; // R10
+import { MembershipAnalyticsModule } from './membership-analytics/membership-analytics.module'; // R11
 
 @Module({
   imports: [
@@ -64,6 +65,7 @@ import { MembershipPeriodsModule } from './membership-periods/membership-periods
     MembershipsModule,
     EngagementModule, // R8
     MembershipPeriodsModule, // R10
+    MembershipAnalyticsModule, // R11
     AnnouncementsModule,
     TeacherInsightsModule,
   ],
