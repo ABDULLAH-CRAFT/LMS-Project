@@ -202,6 +202,18 @@ export class RefundService {
       });
       if (input.paymentItemId) purchases = purchases.filter((tx) => tx.paymentItemId === input.paymentItemId);
       if (purchases.length === 0) {
+        // R7: a MEMBERSHIP payment was refunded (e.g. from the Razorpay dashboard). Membership reversals
+        // are built in Phase R10, so for now: do NOT 409 (Razorpay would retry the webhook forever) -
+        // log loudly and let R14 reconciliation flag "refund without reversal".
+        const membershipPayments = await manager.count(RevenueTransaction, {
+          where: { paymentId: payment.id, transactionType: RevenueTransactionType.MEMBERSHIP_PAYMENT },
+        });
+        if (membershipPayments > 0) {
+          this.logger.warn(
+            `Refund ${input.providerRefundId} is for membership payment ${payment.id}: NOT recorded in the ledger yet (Phase R10).`,
+          );
+          return null;
+        }
         throw new ConflictException(`Payment ${payment.id} has no settled course revenue to reverse`);
       }
 

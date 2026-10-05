@@ -6,9 +6,10 @@ import { CourseModule } from '../course-content/entities/course-module.entity';
 import { Enrollment } from '../enrollments/entities/enrollment.entity';
 import { ProgressService } from './progress.service';
 import { ProgressController } from './progress..controller';
+import { MembershipsModule } from '../memberships/memberships.module'; // R6
 
 @Module({
-  imports: [TypeOrmModule.forFeature([LessonProgress, Lesson, CourseModule, Enrollment])],
+  imports: [TypeOrmModule.forFeature([LessonProgress, Lesson, CourseModule, Enrollment]), MembershipsModule],
   providers: [ProgressService],
   controllers: [ProgressController],
 })

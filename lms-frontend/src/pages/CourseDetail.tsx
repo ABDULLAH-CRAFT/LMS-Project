@@ -34,7 +34,7 @@ export default function CourseDetail() {
   const enrollmentCheckQuery = useQuery({
     queryKey: ['enrollment-check', id],
     queryFn: async () => {
-      const response = await api.get<{ enrolled: boolean }>(`/enrollments/check/${id}`);
+      const response = await api.get<{ enrolled: boolean; hasAccess?: boolean; accessVia?: 'ENROLLMENT' | 'MEMBERSHIP' | null }>(`/enrollments/check/${id}`);
       return response.data;
     },
     enabled: !!id,
@@ -71,7 +71,7 @@ export default function CourseDetail() {
   }
 
   const course = courseQuery.data;
-  const isEnrolled = enrollmentCheckQuery.data?.enrolled ?? false;
+  const isEnrolled = enrollmentCheckQuery.data?.hasAccess ?? enrollmentCheckQuery.data?.enrolled ?? false; // R6: purchase OR membership
   const totalLessons = curriculumQuery.data?.reduce((sum, m) => sum + m.lessons.length, 0) ?? 0;
 
   function renderLessonContent(contentType: string, content: string) {

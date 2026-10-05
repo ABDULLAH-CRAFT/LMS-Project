@@ -17,6 +17,7 @@ import { User } from '../users/entities/user.entity';
 import { CoursesService } from '../courses/courses.service';
 import { CreateSubmissionDto } from './dto/create-submission.dto';
 import { GradeSubmissionDto } from './dto/grade-submission.dto';
+import { MembershipAccessService } from '../memberships/membership-access.service'; // R6
 
 // Served by main.ts's existing /uploads/ static route — nothing to change there.
 export const SUBMISSIONS_DIR = join(__dirname, '..', '..', 'uploads', 'submissions');
@@ -30,6 +31,7 @@ export class SubmissionsService {
     @InjectRepository(Enrollment) private enrollmentRepo: Repository<Enrollment>,
     @InjectRepository(User) private userRepo: Repository<User>,
     private coursesService: CoursesService,
+    private membershipAccess: MembershipAccessService, // R6
   ) {}
 
   private async verifyOwnership(courseId: string, teacherId: string) {
@@ -41,8 +43,8 @@ export class SubmissionsService {
   }
 
   private async requireEnrollment(studentId: string, courseId: string) {
-    const enrollment = await this.enrollmentRepo.findOne({ where: { studentId, courseId } });
-    if (!enrollment) throw new ForbiddenException('You are not enrolled in this course');
+    const access = await this.membershipAccess.getCourseAccess(studentId, courseId); // R6: purchase OR membership
+    if (!access.hasAccess) throw new ForbiddenException('You do not have access to this course');
   }
 
   private removeFileFromDisk(storedName: string | null | undefined) {

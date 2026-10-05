@@ -8,7 +8,7 @@
   "scripts": {
     "build": "nest build",
     "backfill:revenue": "ts-node -r tsconfig-paths/register src/database/backfill-course-revenue.ts",
-     "typeorm": "ts-node -r tsconfig-paths/register ./node_modules/typeorm/cli.js",
+    "typeorm": "ts-node -r tsconfig-paths/register ./node_modules/typeorm/cli.js",
     "migration:run": "ts-node -r tsconfig-paths/register ./node_modules/typeorm/cli.js migration:run -d src/database/data-source.ts",
     "migration:revert": "ts-node -r tsconfig-paths/register ./node_modules/typeorm/cli.js migration:revert -d src/database/data-source.ts",
     "migration:show": "ts-node -r tsconfig-paths/register ./node_modules/typeorm/cli.js migration:show -d src/database/data-source.ts",
@@ -50,6 +50,7 @@
     "passport-jwt": "^4.0.1",
     "pg": "^8.22.0",
     "razorpay": "^2.9.8",
+    "react-native": "^0.87.1",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1",
     "socket.io": "^4.8.3",

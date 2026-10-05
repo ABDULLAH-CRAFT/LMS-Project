@@ -15,13 +15,13 @@ export default function StudentCourseLearn() {
   const enrollmentCheckQuery = useQuery({
     queryKey: ['enrollment-check', courseId],
     queryFn: async () => {
-      const response = await api.get<{ enrolled: boolean }>(`/enrollments/check/${courseId}`);
+    const response = await api.get<{ enrolled: boolean; hasAccess?: boolean }>(`/enrollments/check/${courseId}`);
       return response.data;
     },
     enabled: !!courseId,
   });
 
-  const isEnrolled = enrollmentCheckQuery.data?.enrolled ?? false;
+  const isEnrolled = enrollmentCheckQuery.data?.hasAccess ?? enrollmentCheckQuery.data?.enrolled ?? false; // R6: purchase OR membership
 
   useEffect(() => {
     if (enrollmentCheckQuery.data && !isEnrolled) {

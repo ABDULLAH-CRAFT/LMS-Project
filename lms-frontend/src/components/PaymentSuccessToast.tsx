@@ -25,8 +25,11 @@ export default function PaymentSuccessToast() {
       <div className="flex-1">
         <p className="text-sm font-semibold text-gray-900">Payment successful</p>
         <p className="text-sm text-gray-500">
-          You're enrolled in {lastEvent.enrolledCourseIds.length}{' '}
-          {lastEvent.enrolledCourseIds.length === 1 ? 'course' : 'courses'}.
+          {lastEvent.enrolledCourseIds.length === 0
+            ? 'Your membership is now active.'
+            : `You're enrolled in ${lastEvent.enrolledCourseIds.length} ${
+                lastEvent.enrolledCourseIds.length === 1 ? 'course' : 'courses'
+              }.`}
         </p>
       </div>
       <button

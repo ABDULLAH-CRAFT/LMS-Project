@@ -2,6 +2,7 @@
 export const routeMap: Record<string, string> = {
   '/student': 'All Courses',
   '/student/my-courses': 'My Courses',
+  '/student/membership': 'Membership', // R6
   '/student/assignments': 'Assignments',
   '/student/announcements': 'Announcements',
   '/student/profile': 'Profile',

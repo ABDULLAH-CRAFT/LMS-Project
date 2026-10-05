@@ -8,11 +8,15 @@ import { User } from '../users/entities/user.entity';
 import { CoursesModule } from '../courses/courses.module';
 import { SubmissionsService } from './submissions.service';
 import { SubmissionsController } from './submissions.controller';
+import { MembershipsModule } from 'src/memberships/memberships.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([AssignmentSubmission, Assignment, Lesson, Enrollment, User]),
     CoursesModule, // exports CoursesService
+      TypeOrmModule.forFeature([AssignmentSubmission, Assignment, Lesson, Enrollment, User]),
+  /* ...whatever else is already in this array..., */
+  MembershipsModule, // R6
   ],
   providers: [SubmissionsService],
   controllers: [SubmissionsController],

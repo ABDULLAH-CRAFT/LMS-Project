@@ -36,6 +36,8 @@ import TeacherEarnings from './pages/TeacherEarnings';
 import TeacherCourseEarnings from './pages/TeacherCourseEarnings'; // R5
 import TeacherStatements from './pages/TeacherStatements'; // R5
 import StudentAnnouncements from './pages/StudentAnnouncements';
+import AdminMembership from './pages/AdminMembership'; // R6
+import StudentMembership from './pages/StudentMembership'; // R6
 
 export default function App() {
   return (
@@ -97,12 +99,7 @@ export default function App() {
               path="/admin/membership"
               element={
                 <ProtectedRoute allowedRoles={['admin']}>
-                  <ComingSoonPage
-                    sidebarSections={adminSidebarSections}
-                    title="Membership"
-                    description="Membership plans, subscribers and the teacher revenue pool."
-                    icon="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"
-                  />
+                  <AdminMembership />
                 </ProtectedRoute>
               }
             />
@@ -259,6 +256,14 @@ export default function App() {
               element={
                 <ProtectedRoute allowedRoles={['student']}>
                   <StudentMyCourses />
+                </ProtectedRoute>
+              }
+            />
+                        <Route
+              path="/student/membership"
+              element={
+                <ProtectedRoute allowedRoles={['student']}>
+                  <StudentMembership />
                 </ProtectedRoute>
               }
             />

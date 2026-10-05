@@ -6,6 +6,7 @@ import { RevenueRule } from './entities/revenue-rule.entity';
 import { RevenueTransaction } from './entities/revenue-transaction.entity';
 import { RevenueLedgerService } from './revenue-ledger.service';
 import { RevenueRulesService } from './revenue-rules.service';
+import { RevenuePeriodService } from './revenue-period.service'; // R7
 import { FinanceQueryService } from './finance-query.service';
 import { FinanceController } from './finance.controller';
 import { FinanceAdminService } from './finance-admin.service'; // R4
@@ -16,7 +17,7 @@ import { FinanceTeacherController } from './finance-teacher.controller'; // R5
 @Module({
   imports: [TypeOrmModule.forFeature([RevenueTransaction, RevenueAllocation, RevenuePeriod, RevenueRule])],
   controllers: [FinanceController, FinanceAdminController, FinanceTeacherController], // R3, R4, R5
-  providers: [RevenueRulesService, RevenueLedgerService, FinanceQueryService, FinanceAdminService, FinanceTeacherService],
-  exports: [RevenueRulesService, RevenueLedgerService, FinanceQueryService, FinanceAdminService, FinanceTeacherService],
+  providers: [RevenueRulesService, RevenuePeriodService, RevenueLedgerService, FinanceQueryService, FinanceAdminService, FinanceTeacherService],
+  exports: [RevenueRulesService, RevenuePeriodService, RevenueLedgerService, FinanceQueryService, FinanceAdminService, FinanceTeacherService],
 })
 export class FinanceModule {}

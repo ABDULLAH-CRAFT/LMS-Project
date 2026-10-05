@@ -21,6 +21,7 @@ import { AnnouncementsModule } from './announcements/announcements.module';
 import { TeacherInsightsModule } from './teacher-insights/teacher-insights.module';
 import { join } from 'path';
 import { FinanceModule } from './finance/finance.module';
+import { MembershipsModule } from './memberships/memberships.module'; // R6
 
 @Module({
   imports: [
@@ -58,6 +59,7 @@ import { FinanceModule } from './finance/finance.module';
     AssignmentsModule,
     SubmissionsModule,
     FinanceModule,
+    MembershipsModule,
     AnnouncementsModule,
     TeacherInsightsModule,
   ],

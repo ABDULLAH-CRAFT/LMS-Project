@@ -52,6 +52,20 @@ export interface NetAllocation {
   recipientId: string | null;
   net: string; // original + all reversals, e.g. "420.00"
 }
+export interface PostMembershipPaymentInput {
+  paymentId: string;
+  paymentItemId: string; // one membership transaction per payment item, ever
+  studentId: string;
+  amount: string; // the payment item's amount, e.g. "599.00"
+  currency?: string;
+  periodId: string; // the OPEN monthly revenue period this money is pooled into
+  occurredAt: Date; // when the payment was actually paid
+}
+
+export interface MembershipPostResult {
+  created: boolean; // false = already posted; nothing was written
+  transaction: RevenueTransaction;
+}
 
 @Injectable()
 export class RevenueLedgerService {
@@ -69,16 +83,19 @@ export class RevenueLedgerService {
 
   async postCoursePurchase(input: PostCoursePurchaseInput, manager: EntityManager): Promise<LedgerPostResult> {
     const amountPaise = toPaise(input.amount);
+    
     if (amountPaise <= 0n) throw new BadRequestException('Course purchase amount must be positive');
 
     // Derived (not caller-supplied) so it cannot be spoofed or forgotten.
     // /verify, the webhook and any return handler all map to the SAME key.
     const idempotencyKey = `course_purchase:${input.paymentItemId}`;
+    
 
     const existing = await this.findByKey(idempotencyKey, manager);
     if (existing) return this.load(existing, false, manager);
 
     const rule = await this.rules.getEffectiveRule(RevenueSourceType.COURSE_PURCHASE, input.occurredAt, manager);
+    
     const { platformPaise, teacherPaise } = splitAmount(
       amountPaise,
       percentToBps(rule.platformPercentage),
@@ -140,6 +157,52 @@ export class RevenueLedgerService {
 
     const transaction = await manager.findOneByOrFail(RevenueTransaction, { id: newId });
     return this.load(transaction, true, manager);
+  }
+    // ───────────────────────── membership payment (pooled, no allocations yet) ─────────────────────────
+
+  /**
+   * Books a membership payment into its revenue period's POOL. Deliberately writes NO allocations:
+   * the 30% LMS / 70% teacher-pool split and the per-teacher distribution happen at period close
+   * (Phase R10). The database balance trigger already skips MEMBERSHIP_PAYMENT rows.
+   */
+  async postMembershipPayment(input: PostMembershipPaymentInput, manager: EntityManager): Promise<MembershipPostResult> {
+    const amountPaise = toPaise(input.amount);
+    if (amountPaise <= 0n) throw new BadRequestException('Membership payment amount must be positive');
+
+    // Derived, never caller-supplied: /memberships/verify, the webhook and the return URL map to the SAME key.
+    const idempotencyKey = `membership_payment:${input.paymentItemId}`;
+
+    const existing = await this.findByKey(idempotencyKey, manager);
+    if (existing) return { created: false, transaction: existing };
+
+    const inserted = await manager
+      .createQueryBuilder()
+      .insert()
+      .into(RevenueTransaction)
+      .values({
+        idempotencyKey,
+        transactionType: RevenueTransactionType.MEMBERSHIP_PAYMENT,
+        status: RevenueTransactionStatus.POSTED,
+        amount: fromPaise(amountPaise),
+        currency: input.currency ?? 'INR',
+        paymentId: input.paymentId,
+        paymentItemId: input.paymentItemId,
+        studentId: input.studentId,
+        periodId: input.periodId,
+        occurredAt: input.occurredAt,
+      })
+      .orIgnore()
+      .returning('id')
+      .execute();
+
+    const newId = (inserted.raw as { id?: string }[] | undefined)?.[0]?.id;
+    if (!newId) {
+      const winner = await this.findByKey(idempotencyKey, manager);
+      if (!winner) throw new ConflictException('Could not record the membership revenue transaction');
+      return { created: false, transaction: winner };
+    }
+
+    return { created: true, transaction: await manager.findOneByOrFail(RevenueTransaction, { id: newId }) };
   }
 
   // ───────────────────────── refund / chargeback ─────────────────────────

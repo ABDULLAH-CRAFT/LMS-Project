@@ -23,7 +23,9 @@ export interface PaymentSuccessEvent {
  * regardless of which page the user is on when confirmation lands.
  */
 export function usePaymentSuccessSocket() {
-  const [lastEvent, setLastEvent] = useState<PaymentSuccessEvent | null>(null);
+  const [lastEvent, setLastEvent] = useState<PaymentSuccessEvent | null>(
+    null,
+  );
   const queryClient = useQueryClient();
 
   useEffect(() => {
@@ -37,8 +39,12 @@ export function usePaymentSuccessSocket() {
       // new enrollment without needing a manual page reload.
       queryClient.invalidateQueries({ queryKey: ['cart'] });
       queryClient.invalidateQueries({ queryKey: ['my-enrollments'] });
-      // matches every ['enrollment-check', courseId] query, regardless of course
+
+      // Matches every ['enrollment-check', courseId] query, regardless of course.
       queryClient.invalidateQueries({ queryKey: ['enrollment-check'] });
+
+      // Refresh membership data after successful payment.
+      queryClient.invalidateQueries({ queryKey: ['membership'] });
     };
 
     socket?.on('payment_success', handleSuccess);
@@ -53,11 +59,13 @@ export function usePaymentSuccessSocket() {
       socket = getPaymentSocket();
       socket?.on('payment_success', handleSuccess);
     };
+
     window.addEventListener('auth-changed', handleAuthChange);
 
     return () => {
       socket?.off('payment_success', handleSuccess);
       window.removeEventListener('auth-changed', handleAuthChange);
+
       // Don't disconnect here — other components using this hook (or a
       // remount from route changes) would otherwise tear down a socket
       // someone else still needs. disconnectPaymentSocket() is for
@@ -65,7 +73,10 @@ export function usePaymentSuccessSocket() {
     };
   }, [queryClient]);
 
-  return { lastEvent, clearEvent: () => setLastEvent(null) };
+  return {
+    lastEvent,
+    clearEvent: () => setLastEvent(null),
+  };
 }
 
 export { disconnectPaymentSocket };

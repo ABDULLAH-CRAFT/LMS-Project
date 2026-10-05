@@ -11,6 +11,7 @@ import { CheckoutCartDto } from './dto/checkout-cart.dto';
 import { VerifyPaymentDto } from 'src/payment/dto/verify-payment.dto';
 import { PaymentsService } from 'src/payment/payments.service';
 import { RefundService } from 'src/payment/refund.service';
+import { MembershipAccessService } from 'src/memberships/membership-access.service'; // R6
 
 @ApiTags('Enrollments')
 @Controller('enrollments')
@@ -19,6 +20,7 @@ export class EnrollmentsController {
     private enrollmentsService: EnrollmentsService,
     private paymentsService: PaymentsService,
     private refundService: RefundService, // R3
+    private membershipAccess: MembershipAccessService, // R6
   ) {}
 
   @Post('checkout')
@@ -94,6 +96,8 @@ export class EnrollmentsController {
   @Roles(UserRole.STUDENT)
   async checkEnrollment(@Req() req: any, @Param('courseId') courseId: string) {
     const enrolled = await this.enrollmentsService.isEnrolled(req.user.userId, courseId);
-    return { enrolled };
+    // R6: `enrolled` still means "bought it". `hasAccess` also covers an active membership.
+    const access = await this.membershipAccess.getCourseAccess(req.user.userId, courseId);
+    return { enrolled, hasAccess: access.hasAccess, accessVia: access.via };
   }
 }
