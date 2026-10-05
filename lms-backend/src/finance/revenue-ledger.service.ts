@@ -12,7 +12,7 @@ import {
 import { fromPaise, percentToBps, toPaise } from './money.util';
 import { proportionalReversal, splitAmount } from './revenue-calculator';
 import { RevenueRulesService } from './revenue-rules.service';
-
+import { RevenuePeriodService } from './revenue-period.service'; // R10 - membership refunds land in the open period
 /**
  * INTERNAL API - there is deliberately no controller. Only server code that has
  * already loaded authoritative values from the database (Phase R2 loads them from
@@ -72,6 +72,7 @@ export class RevenueLedgerService {
   constructor(
     private readonly dataSource: DataSource,
     private readonly rules: RevenueRulesService,
+    private readonly periods: RevenuePeriodService, // R10
   ) {}
 
   /** Convenience wrapper: everything inside `work` commits or rolls back together. */
@@ -203,6 +204,70 @@ export class RevenueLedgerService {
     }
 
     return { created: true, transaction: await manager.findOneByOrFail(RevenueTransaction, { id: newId }) };
+  }
+  
+  // ───────────────────────── membership refund / chargeback (R10) ─────────────────────────
+
+  /** Still-unreversed money on one membership payment, in paise. */
+  async getMembershipRemainingPaise(transactionId: string, manager: EntityManager): Promise<bigint> {
+    const original = await manager.findOneByOrFail(RevenueTransaction, { id: transactionId });
+    const rows: { reversed: string }[] = await manager.query(
+      `SELECT COALESCE(SUM("amount"), 0)::text AS "reversed" FROM "revenue_transactions" WHERE "reversesTransactionId" = $1`,
+      [transactionId],
+    );
+    return toPaise(original.amount) + toPaise(rows[0].reversed);
+  }
+
+  /**
+   * Books a refund/chargeback of a MEMBERSHIP payment as a negative ledger row. No allocations are written
+   * (the money is still pooled). The row goes into the OPEN period in which the refund happened - never into a
+   * finalized period, which stays frozen. That period's eligible revenue (Phase R10) is reduced by it.
+   */
+  async postMembershipReversal(input: PostReversalInput, manager: EntityManager): Promise<MembershipPostResult> {
+    const refundPaise = toPaise(input.amount);
+    if (refundPaise <= 0n) throw new BadRequestException('Reversal amount must be positive');
+
+    // Row lock: concurrent refunds of the same payment are serialised.
+    const original = await manager
+      .getRepository(RevenueTransaction)
+      .createQueryBuilder('t')
+      .setLock('pessimistic_write')
+      .where('t.id = :id', { id: input.originalTransactionId })
+      .getOne();
+    if (!original) throw new NotFoundException('Original revenue transaction not found');
+    if (original.transactionType !== RevenueTransactionType.MEMBERSHIP_PAYMENT) {
+      throw new BadRequestException('Only membership payments can be reversed here');
+    }
+
+    const idempotencyKey = `reversal:${input.idempotencyKey}`;
+    const existing = await this.findByKey(idempotencyKey, manager);
+    if (existing) return { created: false, transaction: existing };
+
+    const remaining = await this.getMembershipRemainingPaise(original.id, manager);
+    if (refundPaise > remaining) {
+      throw new ConflictException(`Refund exceeds what is still refundable (${fromPaise(remaining)} remaining)`);
+    }
+
+    const period = await this.periods.resolveOpenPeriod(input.occurredAt, manager);
+
+    const reversal = await manager.getRepository(RevenueTransaction).save(
+      manager.getRepository(RevenueTransaction).create({
+        idempotencyKey,
+        transactionType: input.reversalType,
+        status: RevenueTransactionStatus.POSTED,
+        amount: fromPaise(-refundPaise),
+        currency: original.currency,
+        paymentId: original.paymentId,
+        paymentItemId: original.paymentItemId,
+        courseId: null,
+        studentId: original.studentId,
+        periodId: period.id,
+        reversesTransactionId: original.id,
+        revenueRuleId: null,
+        occurredAt: input.occurredAt,
+      }),
+    );
+    return { created: true, transaction: reversal };
   }
 
   // ───────────────────────── refund / chargeback ─────────────────────────

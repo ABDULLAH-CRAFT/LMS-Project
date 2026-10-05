@@ -5,6 +5,7 @@ export interface MembershipRevenuePeriod {
   status: 'OPEN' | 'CALCULATING' | 'CALCULATED' | 'FINALIZED' | 'PAYOUT_PROCESSING' | 'PAID';
   payments: number;
   grossMembershipRevenue: string;
+  refundsAmount: string;
   projectedPlatformShare: string;
   projectedTeacherPool: string;
   appliedRule: { platformPercentage: string; teacherPercentage: string };

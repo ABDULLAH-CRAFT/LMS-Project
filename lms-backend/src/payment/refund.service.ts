@@ -201,22 +201,17 @@ export class RefundService {
         where: { paymentId: payment.id, transactionType: RevenueTransactionType.COURSE_PURCHASE },
       });
       if (input.paymentItemId) purchases = purchases.filter((tx) => tx.paymentItemId === input.paymentItemId);
-      if (purchases.length === 0) {
-        // R7: a MEMBERSHIP payment was refunded (e.g. from the Razorpay dashboard). Membership reversals
-        // are built in Phase R10, so for now: do NOT 409 (Razorpay would retry the webhook forever) -
-        // log loudly and let R14 reconciliation flag "refund without reversal".
-        const membershipPayments = await manager.count(RevenueTransaction, {
+
+       if (purchases.length === 0) {
+        // R10: a MEMBERSHIP payment was refunded / charged back - book it as a reversal in the open period.
+        const membershipTxs = await manager.find(RevenueTransaction, {
           where: { paymentId: payment.id, transactionType: RevenueTransactionType.MEMBERSHIP_PAYMENT },
         });
-        if (membershipPayments > 0) {
-          this.logger.warn(
-            `Refund ${input.providerRefundId} is for membership payment ${payment.id}: NOT recorded in the ledger yet (Phase R10).`,
-          );
-          return null;
+        if (membershipTxs.length > 0) {
+          return this.recordMembershipRefund(payment, membershipTxs, input, manager);
         }
         throw new ConflictException(`Payment ${payment.id} has no settled course revenue to reverse`);
       }
-
       const shares: { key: string; remainingPaise: bigint }[] = [];
       for (const tx of purchases) {
         const remainingPaise = await this.remainingPaise(tx.id, manager);
@@ -303,5 +298,76 @@ export class RefundService {
   private async remainingPaise(transactionId: string, manager: EntityManager): Promise<bigint> {
     const net = await this.ledger.getNetAllocations(transactionId, manager);
     return net.reduce((sum, row) => sum + toPaise(row.net), 0n);
+  }
+  
+  /** R10 - refund / chargeback of a membership payment. Same atomic transaction as recordRefund(). */
+  private async recordMembershipRefund(
+    payment: Payment,
+    membershipTxs: RevenueTransaction[],
+    input: RecordRefundInput,
+    manager: EntityManager,
+  ): Promise<RecordRefundResult> {
+    let targets = membershipTxs;
+    if (input.paymentItemId) targets = membershipTxs.filter((tx) => tx.paymentItemId === input.paymentItemId);
+
+    const shares: { key: string; remainingPaise: bigint }[] = [];
+    for (const tx of targets) {
+      const remainingPaise = await this.ledger.getMembershipRemainingPaise(tx.id, manager);
+      if (remainingPaise > 0n) shares.push({ key: tx.id, remainingPaise });
+    }
+    if (shares.length === 0) throw new ConflictException('Nothing left to refund on this membership payment');
+
+    const remainingTotal = shares.reduce((sum, share) => sum + share.remainingPaise, 0n);
+    if (input.amountPaise > remainingTotal) {
+      throw new ConflictException(`Refund exceeds what is still refundable (${fromPaise(remainingTotal)} remaining)`);
+    }
+
+    const perTx = proportionalReversal(shares, input.amountPaise);
+    const reversalType = input.kind === 'CHARGEBACK' ? RevenueTransactionType.CHARGEBACK : RevenueTransactionType.REFUND;
+
+    const applied: { tx: RevenueTransaction; paise: bigint; reversalId: string }[] = [];
+    for (const tx of targets) {
+      const paise = perTx.get(tx.id) ?? 0n;
+      if (paise <= 0n) continue;
+      const posted = await this.ledger.postMembershipReversal(
+        {
+          originalTransactionId: tx.id,
+          reversalType,
+          amount: fromPaise(paise),
+          idempotencyKey: `${input.providerRefundId}:${tx.paymentItemId}`,
+          occurredAt: input.occurredAt,
+        },
+        manager,
+      );
+      applied.push({ tx, paise, reversalId: posted.transaction.id });
+    }
+
+    const inserted = await manager.insert(Refund, {
+      providerRefundId: input.providerRefundId,
+      kind: input.kind,
+      source: input.source,
+      paymentId: payment.id,
+      amount: fromPaise(input.amountPaise),
+      currency: input.currency ? input.currency.toUpperCase() : payment.currency,
+      reason: input.reason ?? null,
+      initiatedById: input.initiatedById ?? null,
+      occurredAt: input.occurredAt,
+    });
+    const refundId = inserted.identifiers[0].id as string;
+
+    await manager.insert(
+      RefundItem,
+      applied.map(({ tx, paise, reversalId }) => ({
+        refundId,
+        paymentItemId: tx.paymentItemId as string,
+        revenueTransactionId: tx.id,
+        reversalTransactionId: reversalId,
+        amount: fromPaise(paise),
+        accessRevoked: false, // R10 does not end the subscription - see the notes
+      })),
+    );
+
+    const refund = await manager.findOneByOrFail(Refund, { id: refundId });
+    return { created: true, refund };
   }
 }
