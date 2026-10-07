@@ -44,6 +44,7 @@ import AdminMembershipAnalytics from './pages/AdminMembershipAnalytics'; // R11
 import TeacherMembershipEarnings from './pages/TeacherMembershipEarnings'; // R12
 import AdminPayouts from './pages/AdminPayouts'; // R13
 import TeacherPayouts from './pages/TeacherPayouts'; // R13
+import AdminReconciliation from './pages/AdminReconciliation';
 
 export default function App() {
   return (
@@ -138,6 +139,14 @@ export default function App() {
               element={
                 <ProtectedRoute allowedRoles={['admin']}>
                   <AdminPayouts />
+                </ProtectedRoute>
+              }
+            />
+              <Route
+              path="/admin/reconciliation"
+              element={
+                <ProtectedRoute allowedRoles={['admin']}>
+                  <AdminReconciliation />
                 </ProtectedRoute>
               }
             />

@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from '
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import type { Course } from '../types/course';
 import { getCart, addCartItem, removeCartItem } from '../lib/api/cart';
+import { useCurrentUser } from '../hooks/useCurrentUser';
 
 interface CartContextValue {
   items: Course[];
@@ -41,11 +42,16 @@ export function CartProvider({ children }: { children: ReactNode }) {
     if (!authed) queryClient.setQueryData(CART_QUERY_KEY, []);
   }, [authed, queryClient]);
 
+  // The cart endpoint is student-only, so admins and teachers must never call it.
+  const { data: currentUser } = useCurrentUser();
+  const isStudent = authed && currentUser?.role === 'student';
+
   const { data: items = [], isLoading } = useQuery({
     queryKey: CART_QUERY_KEY,
     queryFn: getCart,
-    enabled: authed, // guest/logged-out pages never hit the (protected) cart endpoint
+    enabled: isStudent, // only logged-in students hit the (student-only) cart endpoint
     staleTime: 30_000,
+    retry: false, // a 403/401 will not fix itself by retrying
   });
 
   const addMutation = useMutation({
@@ -82,7 +88,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   });
 
   function addToCart(course: Course) {
-    if (!authed) return; // safety net — add-to-cart buttons only live on protected student pages
+    if (!isStudent) return; // safety net: add-to-cart buttons only live on student pages
     addMutation.mutate(course);
   }
 

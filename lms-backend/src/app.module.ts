@@ -26,6 +26,7 @@ import { EngagementModule } from './engagement/engagement.module'; // R8
 import { MembershipPeriodsModule } from './membership-periods/membership-periods.module'; // R10
 import { MembershipAnalyticsModule } from './membership-analytics/membership-analytics.module'; // R11
 import { PayoutsModule } from './payouts/payouts.module'; // R13
+import { ReconciliationModule } from './reconciliation/reconciliation.module';
 
 @Module({
   imports: [
@@ -68,6 +69,7 @@ import { PayoutsModule } from './payouts/payouts.module'; // R13
     MembershipPeriodsModule, // R10
     MembershipAnalyticsModule, // R11
     PayoutsModule, // R13
+    ReconciliationModule, // R14
     AnnouncementsModule,
     TeacherInsightsModule,
   ],

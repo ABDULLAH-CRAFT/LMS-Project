@@ -25,6 +25,7 @@ export const routeMap: Record<string, string> = {
   '/admin/membership': 'Membership', // placeholder until R6
   '/admin/membership-periods': 'Revenue Periods', // R10
   '/admin/payouts': 'Payouts', // R13
+  '/admin/reconciliation': 'Audit & Reconciliation', // R14
   '/admin/engagement': 'Engagement Analytics', // R9
 };
 

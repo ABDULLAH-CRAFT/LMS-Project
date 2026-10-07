@@ -10,23 +10,17 @@ const SOCKET_URL = 'http://localhost:3000'; // same host as lib/axios.ts's baseU
 let socket: Socket | null = null;
 
 export function getPaymentSocket(): Socket | null {
-  const token = localStorage.getItem('accessToken');
-  if (!token) return null; // not logged in — nothing to connect for
+  if (!localStorage.getItem('accessToken')) return null; // not logged in — nothing to connect for
 
   if (socket && socket.connected) return socket;
 
   if (!socket) {
     socket = io(`${SOCKET_URL}/payments`, {
-      auth: { token },
+      // A function, so every connect/reconnect sends the CURRENT token (it changes after a silent refresh).
+      auth: (cb) => cb({ token: localStorage.getItem('accessToken') }),
       autoConnect: false,
-      // If a connect ever gets rejected (expired token), don't spam retries
-      // forever — the next getPaymentSocket() call after a fresh login
-      // will pick up the new token and reconnect from scratch.
       reconnectionAttempts: 5,
     });
-  } else {
-    // token may have changed since the socket was created (re-login)
-    socket.auth = { token };
   }
 
   socket.connect();
